@@ -53,7 +53,7 @@ def manipulate_object(id=None, object=None):
 
 	db[id] = object_dict
 
-	return id
+	return object_dict
 
 def add_object(object):
 	"""
