@@ -241,6 +241,7 @@ class Channel:
 	object_type = 'channel'
 	valid_keys = ["name", "permissions", "channel_type", "parent_conference", "members", "icon", "description"]
 	required_keys = ["name", "permissions", "channel_type"] # the rest is handled during init
+	default_keys = { "permissions": "21101" }
 	nonrewritable_keys = ["channel_type", "parent_conference"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -304,7 +305,7 @@ class Conference:
 	object_type = 'conference'
 	valid_keys = ["name", "description", "icon", "owner", "index", "permissions", "creation_date", "channels", "users", "roles"]
 	required_keys = ["name", "icon", "owner", "permissions", "creation_date"]
-	default_keys = { "index": "false", "channels": [], "users": [], "roles": [] }
+	default_keys = { "index": "false", "channels": [], "users": [], "roles": [], "permissions": "21101" }
 	nonrewritable_keys = ["creation_date"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -331,7 +332,7 @@ class ConferenceUser:
 	object_type = 'conference_user'
 	valid_keys = ["user_id", "nickname", "roles", "permissions", "banned"]
 	required_keys = ["user_id", "permissions"]
-	default_keys = { "banned": "false", "roles": [] }
+	default_keys = { "banned": "false", "roles": [], "permissions": "21101" }
 	nonrewritable_keys = []
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -384,7 +385,7 @@ class Role:
 	object_type = 'role'
 	valid_keys = ["name", "permissions", "color", "description"]
 	required_keys = ["name", "permissions", "color"]
-	default_keys = { "color": "100, 100, 100" }
+	default_keys = { "color": "100, 100, 100", "permissions": "21101" }
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
