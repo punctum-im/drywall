@@ -50,6 +50,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	final_dict['object_type'] = self.object_type
 
 	if patch_dict:
+		# Check for non-rewritable keys
 		try:
 			self.nonrewritable_keys
 		except:
@@ -59,15 +60,16 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 				any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
 				raise ValueError(e)
-
 		for key, value in patch_dict.items():
 			if key in self.valid_keys:
 				final_patch_dict[key] = value
 
+	# Add all valid keys
 	for key, value in object_dict.items():
 		if key in self.valid_keys:
 			final_dict[key] = value
 
+	# Add default keys if needed
 	try:
 		self.default_keys
 	except:
@@ -77,6 +79,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 			if key not in final_dict:
 				final_dict[key] = value
 
+	# Check for missing keys
 	try:
 		missing_key_from_list_in_dict(self.required_keys, final_dict)
 	except KeyError as e:
@@ -86,6 +89,32 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 		final_dict.update(final_patch_dict)
 
 	return final_dict
+
+def get_object_class_by_type(object_type):
+	"""
+	Takes an object type and returns the applicable object.
+	Returns None if there is no object with the given type.
+	"""
+	if object_type == 'instance':
+		return Instance
+	elif object_type == "account":
+		return Account
+	elif object_type == "channel":
+		return Channel
+	elif object_type == "message":
+		return Message
+	elif object_type == "conference":
+		return Conference
+	elif object_type == "conference_user":
+		return ConferenceUser
+	elif object_type == "invite":
+		return Invite
+	elif object_type == "role":
+		return Role
+	elif object_type == "attachment":
+		return Attachment
+	else:
+		return None
 
 def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_id_in_extend=False):
 	"""
@@ -118,59 +147,15 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 			patch_dict = passed_object_dict
 
 	object_type = object_dict["object_type"]
+	object_class = get_object_class_by_type(object_type)
+	if object_class == None:
+		raise TypeError("Nonexistent object_class")
 
-	# Unfortunately, there doesn't seem to be an easy way to convert an object
-	# type name to an actual object, so we have to copy the same commands many
-	# times in a bunch of elif statements. Let me know if there's an easier way
-	# to do this.
-	if object_type == "instance":
-		try:
-			final_object = Instance(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "account":
-		try:
-			final_object = Account(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "channel":
-		try:
-			final_object = Channel(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "message":
-		try:
-			final_object = Message(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "conference":
-		try:
-			final_object = Conference(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "conference_user":
-		try:
-			final_object = ConferenceUser(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "invite":
-		try:
-			final_object = Invite(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "role":
-		try:
-			final_object = Role(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError) as e:
-			raise e
-	elif object_type == "attachment":
-		try:
-			final_object = Attachment(object_dict, force_id=extend, patch_dict=patch_dict)
-		except (KeyError,ValueError,TypeError) as e:
-			raise e
-	else:
-		raise TypeError("Wrong object_type")
-	# Sorry.
+	try:
+		final_object = object_class(object_dict, force_id=extend, patch_dict=patch_dict)
+	except (KeyError,ValueError) as e:
+		raise e
+
 	return final_object
 
 ######################
@@ -205,6 +190,7 @@ class Instance:
 			self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
 		except (KeyError, ValueError) as e:
 			raise e
+
 class Account:
 	"""
 	Contains information about an account.
