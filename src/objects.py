@@ -63,7 +63,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 		for key, value in patch_dict.items():
 			if key in self.valid_keys:
 				if self.key_types[key] == 'id':
-					test_object = db.get_object_by_id(value)
+					test_object = db.get_object_as_dict_by_id(value)
 					if not test_object:
 						raise TypeError("No object with the ID given in the key '" + key + "' was found.")
 					elif not test_object['object_type'] == self.id_key_types[key]:
@@ -74,8 +74,8 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	for key, value in object_dict.items():
 		if key in self.valid_keys:
 			if self.key_types[key] == 'id':
-				test_object = db.get_object_by_id(value)
-				if not test_object:
+				test_object = db.get_object_as_dict_by_id(value)
+				if test_object == None:
 					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
 				elif not test_object['object_type'] == self.id_key_types[key]:
 					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
@@ -199,10 +199,7 @@ class Instance:
 		                                  (You should probably also set force_id
 		                                  if you use this.)
 		"""
-		try:
-			self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		except (KeyError, ValueError) as e:
-			raise e
+		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
 
 class Account:
 	"""
@@ -231,7 +228,7 @@ class Account:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		if self.__dict__['bot'] and not self.__dict__['bot_owner']:
+		if "bot" in self.__dict__ and self.__dict__["bot"] == "true" and not self.__dict__["bot_owner"]:
 			raise KeyError('bot_owner')
 
 class Channel:
@@ -341,7 +338,7 @@ class ConferenceUser:
 	required_keys = ["user_id", "permissions"]
 	default_keys = { "banned": "false", "roles": [], "permissions": "21101" }
 	key_types = {"user_id": "id", "nickname": "string", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
-	id_types = {"user_id": "account", "roles": "role"}
+	id_key_types = {"user_id": "account", "roles": "role"}
 	nonrewritable_keys = []
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
