@@ -9,7 +9,7 @@ import id
 import db_dummy as db
 
 # Common functions
-default_nonrewritable_keys = [ "id", "type", "object_type" ]
+default_nonrewritable_keys = ["id", "type", "object_type"]
 
 def missing_key_from_list_in_dict(test_list, test_dict):
 	"""
@@ -61,16 +61,24 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 			except KeyError as e:
 				raise ValueError(e)
 		for key, value in patch_dict.items():
-			if self.key_types[key] == 'id' and not db.get_object_by_id(value):
-				raise TypeError(value)
 			if key in self.valid_keys:
+				if self.key_types[key] == 'id':
+					test_object = db.get_object_by_id(value)
+					if not test_object:
+						raise TypeError("No object with the ID given in the key '" + key + "' was found.")
+					elif not test_object['object_type'] == self.id_key_types[key]:
+						raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 				final_patch_dict[key] = value
 
 	# Add all valid keys
 	for key, value in object_dict.items():
-		if self.key_types[key] == 'id' and not db.get_object_by_id(value):
-			raise TypeError(value)
 		if key in self.valid_keys:
+			if self.key_types[key] == 'id':
+				test_object = db.get_object_by_id(value)
+				if not test_object:
+					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
+				elif not test_object['object_type'] == self.id_key_types[key]:
+					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 			final_dict[key] = value
 
 	# Add default keys if needed
@@ -205,6 +213,7 @@ class Account:
 	valid_keys = ["username", "short_status", "status", "bio", "index", "email", "bot", "bot_owner", "friends", "blocklist"]
 	required_keys = ["username", "short_status", "email"]
 	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "friends": "id_list", "blocklist": "id_list"}
+	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -235,6 +244,7 @@ class Channel:
 	required_keys = ["name", "permissions", "channel_type"] # the rest is handled during init
 	default_keys = { "permissions": "21101" }
 	key_types = {"name": "string", "permissions": "permission_map", "channel_type": "string", "parent_conference": "id", "members": "id_list", "icon": "string", "description": "string"}
+	id_key_types = {"parent_conference": "conference", "members": "account"}
 	nonrewritable_keys = ["channel_type", "parent_conference"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -273,6 +283,7 @@ class Message:
 	valid_keys = ["content", "parent_channel", "author", "post_date", "edit_date", "edited", "attachment", "reactions"]
 	required_keys = ["content", "parent_channel", "author", "post_date", "edited"]
 	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean"}
+	id_key_types = {"parent_channel": "channel", "author": "account"}
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -301,6 +312,7 @@ class Conference:
 	required_keys = ["name", "icon", "owner", "permissions", "creation_date"]
 	default_keys = { "index": "false", "channels": [], "users": [], "roles": [], "permissions": "21101" }
 	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list" }
+	id_key_types = {"owner": "account", "channels": "channel", "users": "account", "roles": "role"}
 	nonrewritable_keys = ["creation_date"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -329,6 +341,7 @@ class ConferenceUser:
 	required_keys = ["user_id", "permissions"]
 	default_keys = { "banned": "false", "roles": [], "permissions": "21101" }
 	key_types = {"user_id": "id", "nickname": "string", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
+	id_types = {"user_id": "account", "roles": "role"}
 	nonrewritable_keys = []
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -356,6 +369,7 @@ class Invite:
 	valid_keys = ["name", "conference_id", "creator"]
 	required_keys = ["name", "conference_id", "creator"]
 	key_types = {"name": "string", "conference_id": "id", "creator": "id"}
+	id_key_types = {"conference_id": "conference", "creator": "account"}
 	nonrewritable_keys = ["conference_id", "creator"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -410,6 +424,7 @@ class Attachment:
 	valid_keys = ["attachment_type", "quoted_message", "media_link", "title", "embed_type", "description", "color", "image"]
 	required_keys = ["attachment_type"]
 	key_types = {"attachment_type": "string", "quoted_message": "id", "media_link": "string", "title": "string", "embed_type": "number", "description": "string", "color": "string", "image": "string"}
+	id_key_types = {"quoted_message": "message"}
 	nonrewritable_keys = ["attachment_type"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
