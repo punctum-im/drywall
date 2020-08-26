@@ -454,4 +454,4 @@ class Attachment:
 			if "embed_type" not in self.__dict__:
 				raise KeyError("embed_type")
 		else:
-			raise TypeError("Invalid attachment_type: " + attachment_type)
+			raise TypeError("Invalid attachment_type: " + __attachment_type)
