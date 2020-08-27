@@ -6,7 +6,8 @@ tests to extend their functionality (in particular, the generate_objects
 function can be used to quickly generate objects and IDs for testing
 purposes).
 """
-# This is used to import the actual modules:
+# This is used to import our modules.
+# noqa: E402
 import sys
 sys.path.insert(1, './src/')
 
@@ -69,6 +70,7 @@ def generate_objects():
 		created_ids[object] = object_generated_from_dict.__dict__["id"]
 
 	return [created_objects, created_ids]
+
 
 # Commands to execute when the test is ran manually.
 if __name__ == "__main__":

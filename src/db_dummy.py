@@ -100,6 +100,28 @@ def get_object_as_dict_by_id(id):
 	else:
 		return None
 
+def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
+	"""
+	Takes a dict with key and value pairs and returns objects that match
+	(contain) all key-value pairs. Returns a list with dicts.
+
+	Optional arguments:
+	  - limit_objects (default: False) - If set to a number, limits the
+	                                     search to the given amount of
+	                                     objects.
+	"""
+	object_match = []
+	for object in db:
+		for key, value in key_value_dict.items():
+			if key in object and object[key] == value:
+				object_match.append(object)
+	if object_match != []:
+		if limit_objects:
+			return object_match[:limit_objects]
+		else:
+			return object_match
+	return None
+
 def create_stash(id_list):
 	"""
 	Takes up to 100 object IDs and returns a dict containing each ID alongside
@@ -109,7 +131,6 @@ def create_stash(id_list):
 
 	Raises a ValueError if the ID limit is exceeded.
 	"""
-	print(id_list)
 	if len(id_list) > 100:
 		raise ValueError
 

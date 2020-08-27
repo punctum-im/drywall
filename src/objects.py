@@ -4,7 +4,6 @@ Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
-import sys
 import id
 import db_dummy as db
 
@@ -51,11 +50,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 
 	if patch_dict:
 		# Check for non-rewritable keys
-		try:
-			self.nonrewritable_keys
-		except:
-			pass
-		else:
+		if self.nonrewritable_keys:
 			try:
 				any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
@@ -75,7 +70,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 		if key in self.valid_keys:
 			if self.key_types[key] == 'id':
 				test_object = db.get_object_as_dict_by_id(value)
-				if test_object == None:
+				if test_object is None:
 					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
 				elif not test_object['object_type'] == self.id_key_types[key]:
 					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
@@ -160,7 +155,7 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 
 	object_type = object_dict["object_type"]
 	object_class = get_object_class_by_type(object_type)
-	if object_class == None:
+	if object_class is None:
 		raise TypeError("Nonexistent object_class")
 
 	try:
@@ -239,7 +234,7 @@ class Channel:
 	object_type = 'channel'
 	valid_keys = ["name", "permissions", "channel_type", "parent_conference", "members", "icon", "description"]
 	required_keys = ["name", "permissions", "channel_type"] # the rest is handled during init
-	default_keys = { "permissions": "21101" }
+	default_keys = {"permissions": "21101"}
 	key_types = {"name": "string", "permissions": "permission_map", "channel_type": "string", "parent_conference": "id", "members": "id_list", "icon": "string", "description": "string"}
 	id_key_types = {"parent_conference": "conference", "members": "account"}
 	nonrewritable_keys = ["channel_type", "parent_conference"]
@@ -307,8 +302,8 @@ class Conference:
 	object_type = 'conference'
 	valid_keys = ["name", "description", "icon", "owner", "index", "permissions", "creation_date", "channels", "users", "roles"]
 	required_keys = ["name", "icon", "owner", "permissions", "creation_date"]
-	default_keys = { "index": "false", "channels": [], "users": [], "roles": [], "permissions": "21101" }
-	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list" }
+	default_keys = {"index": "false", "channels": [], "users": [], "roles": [], "permissions": "21101"}
+	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list"}
 	id_key_types = {"owner": "account", "channels": "channel", "users": "account", "roles": "role"}
 	nonrewritable_keys = ["creation_date"]
 
@@ -336,7 +331,7 @@ class ConferenceUser:
 	object_type = 'conference_user'
 	valid_keys = ["user_id", "nickname", "roles", "permissions", "banned"]
 	required_keys = ["user_id", "permissions"]
-	default_keys = { "banned": "false", "roles": [], "permissions": "21101" }
+	default_keys = {"banned": "false", "roles": [], "permissions": "21101"}
 	key_types = {"user_id": "id", "nickname": "string", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
 	id_key_types = {"user_id": "account", "roles": "role"}
 	nonrewritable_keys = []
@@ -394,7 +389,7 @@ class Role:
 	valid_keys = ["name", "permissions", "color", "description"]
 	required_keys = ["name", "permissions", "color"]
 	key_types = {"name": "string", "permissions": "permission_map", "color": "string"}
-	default_keys = { "color": "100, 100, 100", "permissions": "21101" }
+	default_keys = {"color": "100, 100, 100", "permissions": "21101"}
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""

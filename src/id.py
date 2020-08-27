@@ -16,5 +16,5 @@ def assign():
 	collisions, we could add a function that check for the ID's presence
 	in the database, but this would slow everything down.
 	"""
-	id=uuid.uuid4()
+	id = uuid.uuid4()
 	return str(id)
