@@ -6,13 +6,8 @@ tests to extend their functionality (in particular, the generate_objects
 function can be used to quickly generate objects and IDs for testing
 purposes).
 """
-# This is used to import our modules.
-# noqa: E402
-import sys
-sys.path.insert(1, './src/')
-
-import objects
-import db_dummy as db
+from drywall import objects
+from drywall import db_dummy as db
 
 def generate_objects():
 	"""

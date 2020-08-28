@@ -4,8 +4,8 @@ Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
-import id
-import db_dummy as db
+from drywall import id
+from drywall import db_dummy as db
 
 # Common functions
 default_nonrewritable_keys = ["id", "type", "object_type"]

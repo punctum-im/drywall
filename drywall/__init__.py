@@ -3,8 +3,9 @@
 This file contains definitions of all the API paths and is meant to be ran as a
 Flask app.
 """
-import objects, settings
-import db_dummy as db
+from drywall import objects
+from drywall import settings
+from drywall import db_dummy as db
 
 import sys
 from flask import Flask, Response, request
