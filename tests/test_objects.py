@@ -6,6 +6,8 @@ tests to extend their functionality (in particular, the generate_objects
 function can be used to quickly generate objects and IDs for testing
 purposes).
 """
+import pytest
+
 from drywall import objects
 from drywall import db_dummy as db
 
@@ -66,10 +68,6 @@ def generate_objects():
 
 	return [created_objects, created_ids]
 
-
-# Commands to execute when the test is ran manually.
-if __name__ == "__main__":
-	# We don't need to do any exception handling here, just crashing
-	# in the original functions is enough because in this case we need
-	# to raise the exception anyways.
-	generate_objects()
+def test_generate_objects():
+	"""For pytest: run the above function"""
+	assert generate_objects()
