@@ -44,7 +44,7 @@ def __post_object(post_dict):
 		db.add_object(object_dict)
 	except Exception as e:
 		raise e
-	return object_dict
+	return object_dict.__dict__
 
 def __patch_object(id, patch_dict):
 	"""
@@ -56,7 +56,7 @@ def __patch_object(id, patch_dict):
 		db.push_object(id, object_dict)
 	except Exception as e:
 		raise e
-	return object_dict
+	return object_dict.__dict__
 
 ###############
 # API methods #
