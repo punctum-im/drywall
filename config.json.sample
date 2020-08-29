@@ -1,0 +1,5 @@
+{
+	"instance_domain": "your.domain",
+	"instance_name": "Your instance name",
+	"instance_description": "An instance running Drywall."
+}
