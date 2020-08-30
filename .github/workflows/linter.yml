@@ -1,4 +1,4 @@
-name: Linting
+name: Linting and tests
 
 on:
   push:
@@ -33,4 +33,4 @@ jobs:
     - name: Test objects
       run: pytest tests/test_objects.py
     - name: Test API
-      run: pytest test/test_api.py
+      run: pytest tests/test_api.py
