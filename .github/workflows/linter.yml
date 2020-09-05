@@ -20,7 +20,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 flake8-tabs pytest
+        pip install flake8 flake8-tabs pytest coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install .
         cp config.json.sample config.json
@@ -30,7 +30,11 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82,F821 --show-source --statistics --use-flake8-tabs
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261
-    - name: Test objects
-      run: pytest tests/test_objects.py
-    - name: Test API
-      run: pytest tests/test_api.py
+    - name: Run tests
+      run: pytest
+    - name: Get code coverage data
+      run: coverage run --source=drywall -m pytest; coverage xml
+    - uses: codecov/codecov-action@v1.0.13
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: coverage.xml
