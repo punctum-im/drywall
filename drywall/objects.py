@@ -156,7 +156,7 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 	                                    extend variable does not exist
 	"""
 
-	patch_dict=False
+	patch_dict = False
 
 	if str(extend) == "False":
 		object_dict = passed_object_dict
@@ -176,7 +176,7 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 
 	try:
 		final_object = object_class(object_dict, force_id=extend, patch_dict=patch_dict)
-	except (KeyError,ValueError) as e:
+	except (KeyError, ValueError) as e:
 		raise e
 
 	return final_object
