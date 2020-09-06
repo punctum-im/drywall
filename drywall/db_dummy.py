@@ -112,9 +112,12 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	"""
 	object_match = []
 	for object in db.values():
+		keys_satisfied = []
 		for key, value in key_value_dict.items():
 			if key in object and object[key] == value:
-				object_match.append(object)
+				keys_satisfied.append(key)
+		if keys_satisfied == list(key_value_dict.keys()):
+			object_match.append(object)
 
 	if object_match:
 		if limit_objects:
