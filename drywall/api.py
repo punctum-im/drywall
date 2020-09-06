@@ -84,13 +84,17 @@ def api_request_or_patch_specific_id(id):
 	if request.method == "GET":
 		try:
 			return __return_object_by_id(id)
-		except:
+		except KeyError:
 			return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
 
 	elif request.method == "PATCH":
 		if not request.json:
 			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 		else:
+			try:
+				__return_object_by_id(id)
+			except KeyError:
+				return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
 			try:
 				return __patch_object(id, request.json)
 			except KeyError:
@@ -137,7 +141,10 @@ def api_return_stash():
 @app.route('/api/v1/accounts/<id>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_id(id):
 	"""Returns or patches the object with the given ID if it's an account."""
-	object_dict = __return_object_by_id(id)
+	try:
+		object_dict = __return_object_by_id(id)
+	except KeyError:
+		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
 	if not object_dict['object_type'] == "account":
 		return Response('{"error": "Provided ID does not belong to an account."}', status=400, mimetype='application/json')
 
@@ -156,7 +163,7 @@ def api_invite_bot_to_conference(bot_id):
 	else:
 		try:
 			bot_user = __return_object_by_id(id)
-		except:
+		except KeyError:
 			return Response('{"error": "No object with given ID"}', status=404, mimetype='application/json')
 		if not bot_user['bot']:
 			return Response('{"error": "Provided ID does not belong to a bot"}', status=400, mimetype='application/json')
@@ -175,6 +182,7 @@ def api_get_or_patch_account_by_name(name):
 	if not object_dict_query:
 		return Response('{"error": "No account with given name found"}', status=404, mimetype='application/json')
 	object_dict = object_dict_query[0]
+	print(object_dict)
 
 	if request.method == "GET":
 		return object_dict
