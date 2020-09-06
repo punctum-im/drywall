@@ -4,11 +4,27 @@ Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
-from drywall import id
 from drywall import db_dummy as db
+
+import uuid    # for assign_id function
 
 # Common functions
 default_nonrewritable_keys = ["id", "type", "object_type"]
+
+def assign_id():
+	"""
+	Assigns an ID. Returns the ID as a string.
+
+	We currently use UUID4 to generate IDs, which *should* help prevent
+	collisions. In the future, this function can be extended to make use of
+	an ID server with snowflake IDs, but this is currently unnecesary.
+
+	Optionally, if we want to make *absolutely* sure there will be no
+	collisions, we could add a function that check for the ID's presence
+	in the database, but this would slow everything down.
+	"""
+	id = uuid.uuid4()
+	return str(id)
 
 def missing_key_from_list_in_dict(test_list, test_dict):
 	"""
@@ -42,7 +58,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 
 	# This is done like this to avoid breakage when the ID = 0.
 	if str(force_id) == "False":
-		final_dict['id'] = id.assign()
+		final_dict['id'] = assign_id()
 	else:
 		final_dict['id'] = str(force_id)
 	final_dict['type'] = self.type
@@ -188,7 +204,7 @@ class Instance:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -216,7 +232,7 @@ class Account:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -247,7 +263,7 @@ class Channel:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -286,7 +302,7 @@ class Message:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -315,7 +331,7 @@ class Conference:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -344,7 +360,7 @@ class ConferenceUser:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -372,7 +388,7 @@ class Invite:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -399,7 +415,7 @@ class Role:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
@@ -427,7 +443,7 @@ class Attachment:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
 		                                sets the object id to the specified ID,
 		                                otherwise the ID is generated with the
-		                                id.assign() function
+		                                assign_id() function
 		  - patch_dict (default: False) - takes False or a dictionary with keys
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
