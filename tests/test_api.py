@@ -91,12 +91,10 @@ def test_api_accounts(pregenerate_objects, client):
 	# anything if everything goes right.
 
 	# GET /api/v1/accounts/by-name/<name>
-	# TODO: Not implemented
-	# assert client.get('/api/v1/accounts/by-name' + account_name).status == "200 OK"
+	assert client.get('/api/v1/accounts/by-name/' + account_name).status == "200 OK"
 
 	# PATCH /api/v1/accounts/by-name/<name>
-	# TODO: Not implemented
-	# account_patch = client.patch('/api/v1/accounts/by-name' + account_name, json={"bio": "custombio"})
-	# account_json = account_patch.get_json()
-	# assert account_patch.status == "200 OK"
-	# assert account_json['bio'] == "custombio"
+	account_patch = client.patch('/api/v1/accounts/by-name/' + account_name, json={"bio": "custombio"})
+	account_json = account_patch.get_json()
+	assert account_patch.status == "200 OK"
+	assert account_json['bio'] == "custombio"

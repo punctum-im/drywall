@@ -168,7 +168,17 @@ def api_invite_bot_to_conference(bot_id):
 		# a proper endpoint for joining a conference, we'll take care of
 		# that first before we implement this
 
-@app.route('/api/v1/accounts/<name>', methods=['PATCH', 'GET'])
+@app.route('/api/v1/accounts/by-name/<name>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_name(name):
 	"""Returns or patches the account with the given name."""
-	return db.get_object_by_key_value_pair({"name": name, "object_type": "account"}, limit_objects=1)
+	object_dict_query = db.get_object_by_key_value_pair({"username": name, "object_type": "account"}, limit_objects=1)
+	if not object_dict_query:
+		return Response('{"error": "No account with given name found"}', status=404, mimetype='application/json')
+	object_dict = object_dict_query[0]
+
+	if request.method == "GET":
+		return object_dict
+	elif request.method == "PATCH":
+		if not request.json:
+			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
+		return __patch_object(object_dict['id'], request.json)

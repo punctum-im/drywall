@@ -111,11 +111,12 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	                                     objects.
 	"""
 	object_match = []
-	for object in db:
+	for object in db.values():
 		for key, value in key_value_dict.items():
 			if key in object and object[key] == value:
 				object_match.append(object)
-	if object_match != []:
+
+	if object_match:
 		if limit_objects:
 			return object_match[:limit_objects]
 		else:
