@@ -29,7 +29,7 @@ jobs:
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82,F821 --show-source --statistics --use-flake8-tabs
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261,C901,E501
     - name: Run tests
       run: pytest
     - name: Get code coverage data
