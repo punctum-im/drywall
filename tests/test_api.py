@@ -6,6 +6,7 @@ Tests for the API.
 import pytest
 
 import drywall
+import drywall.api
 from test_objects import generate_objects
 
 @pytest.fixture
