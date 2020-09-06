@@ -4,12 +4,8 @@
 Tests for the API.
 """
 import pytest
-from flask import request
-from flask import jsonify
 
 import drywall
-from drywall import db_dummy as db
-
 from test_objects import generate_objects
 
 @pytest.fixture

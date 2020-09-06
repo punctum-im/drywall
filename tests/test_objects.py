@@ -6,8 +6,6 @@ tests to extend their functionality (in particular, the generate_objects
 function can be used to quickly generate objects and IDs for testing
 purposes).
 """
-import pytest
-
 from drywall import objects
 from drywall import db_dummy as db
 
