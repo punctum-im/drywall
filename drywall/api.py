@@ -140,7 +140,7 @@ def api_return_stash():
 
 @app.route('/api/v1/accounts/<id>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_id(id):
-	"""Returns or patches the object with the given ID if it's an account."""
+	"""GET/PATCH: Returns or patches the object with the given ID if it's an account."""
 	try:
 		object_dict = __return_object_by_id(id)
 	except KeyError:
@@ -157,7 +157,7 @@ def api_get_or_patch_account_by_id(id):
 
 @app.route('/api/v1/accounts/<bot_id>/invite', methods=['POST'])
 def api_invite_bot_to_conference(bot_id):
-	"""Adds a bot account to a conference."""
+	"""POST: Adds a bot account to a conference."""
 	if not request.json:
 		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 	else:
@@ -177,12 +177,11 @@ def api_invite_bot_to_conference(bot_id):
 
 @app.route('/api/v1/accounts/by-name/<name>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_name(name):
-	"""Returns or patches the account with the given name."""
-	object_dict_query = db.get_object_by_key_value_pair({"username": name, "object_type": "account"}, limit_objects=1)
+	"""GET/PATCH: Returns or patches the account with the given name."""
+	object_dict_query = db.get_object_by_key_value_pair({"username": name, "object_type": "account"}, limit_objects=1, discard_if_key_with_name_present=["remote_domain"])
 	if not object_dict_query:
 		return Response('{"error": "No account with given name found"}', status=404, mimetype='application/json')
 	object_dict = object_dict_query[0]
-	print(object_dict)
 
 	if request.method == "GET":
 		return object_dict
@@ -190,3 +189,37 @@ def api_get_or_patch_account_by_name(name):
 		if not request.json:
 			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 		return __patch_object(object_dict['id'], request.json)
+
+# Messages
+
+@app.route('/api/v1/messages', methods=['POST'])
+def api_post_message():
+	"""POST: Posts a message to the channel specified in the parent_channel value."""
+	if not request.json:
+		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
+	elif not request.json['object_type'] == "message":
+		return Response('{"error": "The provided object has an incorrect object_type (should be message)"}', status=400, mimetype='application/json')
+	try:
+		return __post_object(request.json)
+	except KeyError:
+		return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+	except TypeError:
+		return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+
+@app.route('/api/v1/messages/<id>', methods=['PATCH', 'GET'])
+def api_get_or_patch_message_by_id(id):
+	"""GET/PATCH: Returns or patches the object with the given ID if it's a message."""
+	try:
+		object_dict = __return_object_by_id(id)
+	except KeyError:
+		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
+	if not object_dict['object_type'] == "message":
+		return Response('{"error": "Provided ID does not belong to a message."}', status=400, mimetype='application/json')
+
+	if request.method == "GET":
+		return object_dict
+	elif request.method == "PATCH":
+		if not request.json:
+			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
+		return __patch_object(id, request.json)
+
