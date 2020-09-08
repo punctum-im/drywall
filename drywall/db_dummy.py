@@ -100,7 +100,7 @@ def get_object_as_dict_by_id(id):
 	else:
 		return None
 
-def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
+def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if_key_with_name_present=[]):
 	"""
 	Takes a dict with key and value pairs and returns objects that match
 	(contain) all key-value pairs. Returns a list with dicts.
@@ -109,13 +109,19 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	  - limit_objects (default: False) - If set to a number, limits the
 	                                     search to the given amount of
 	                                     objects.
+	  - discard_if_key_with_name_present - If any of the key names in this
+	                                       list are found in the object, it
+	                                       is discarded.
 	"""
 	object_match = []
 	for object in db.values():
 		keys_satisfied = []
 		for key, value in key_value_dict.items():
-			if key in object and object[key] == value:
-				keys_satisfied.append(key)
+			if key in object:
+				if key in discard_if_key_with_name_present:
+					continue
+				if object[key] == value:
+					keys_satisfied.append(key)
 		if keys_satisfied == list(key_value_dict.keys()):
 			object_match.append(object)
 
