@@ -46,6 +46,44 @@ def __patch_object(id, patch_dict):
 		raise e
 	return object_dict.__dict__
 
+def __get_or_patch_method(id, object_type=None):
+	"""
+	Takes an ID and performs a GET/PATCH operation on the object with the given ID.
+	Returns the resulting dict or a Response object in case of failure.
+	"""
+	try:
+		object_dict = __return_object_by_id(id)
+	except KeyError:
+		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
+	if object_type:
+		if not object_dict['object_type'] == object_type:
+			return Response('{"error": "The requested object is not a(n) ' + str(object_type) + '"}', status=400, mimetype='application/json')
+
+	if request.method == "GET":
+		return object_dict
+	elif request.method == "PATCH":
+		if not request.json:
+			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
+		return __patch_object(id, request.json)
+
+def __post_method(object_type=None):
+	"""
+	Performs a POST operation using request.json as the input.
+	Returns the resulting dict or a Response object in case of failure.
+	"""
+	if not request.json:
+		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
+	if object_type:
+		if not request.json['object_type'] == object_type:
+			return Response('{"error": "The provided object has an incorrect object_type (should be ' + object_type + ')"}', status=400, mimetype='application/json')
+	try:
+		return __post_object(request.json)
+	except KeyError:
+		return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+	except TypeError:
+		return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+
+
 ###############
 # API methods #
 ###############
@@ -55,58 +93,24 @@ def __patch_object(id, patch_dict):
 @app.route('/api/v1/instance')
 def api_return_instance():
 	"""Returns information about the instance."""
-	try:
-		return __return_object_by_id("0")
-	except KeyError:
-		return Response('{"error": "No object with the ID 0 found. This should not happen! Please file a bug in the drywall repository."}', status=500, mimetype='application/json')
+	return __return_object_by_id("0")
 
 @app.route('/api/v1/id', methods=['POST'])
 def api_id():
 	"""POST: Posts an object."""
-	if not request.json:
-		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-	else:
-		try:
-			return __post_object(request.json)
-		except KeyError:
-			return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-		except ValueError:
-			return Response('{"error": "Attempted to replace nonreplacable value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-		except TypeError:
-			return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+	return __post_method()
 
 @app.route('/api/v1/id/<id>', methods=['PATCH', 'GET'])
 def api_request_or_patch_specific_id(id):
-	"""
-	GET: Requests an object by ID.
-	PATCH: Patches the object with the specified ID.
-	"""
-	if request.method == "GET":
-		try:
-			return __return_object_by_id(id)
-		except KeyError:
-			return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
-
-	elif request.method == "PATCH":
-		if not request.json:
-			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-		else:
-			try:
-				__return_object_by_id(id)
-			except KeyError:
-				return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
-			try:
-				return __patch_object(id, request.json)
-			except KeyError:
-				return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-			except ValueError:
-				return Response('{"error": "Attempted to replace nonreplacable value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-			except (NameError, TypeError):
-				return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+	"""GET/PATCH: Requests or patches an object by ID."""
+	return __get_or_patch_method(id)
 
 @app.route('/api/v1/id/<id>/type')
 def api_return_object_type_by_id(id):
-	"""Returns the object type of the object with the given ID"""
+	"""
+	Returns the object type and all other applicable type variables
+	of the object with the given ID
+	"""
 	try:
 		object_dict = __return_object_by_id(id)
 	except KeyError:
@@ -120,7 +124,7 @@ def api_return_object_type_by_id(id):
 
 @app.route('/api/v1/stash/request')
 def api_return_stash():
-	"""Requests a stash"""
+	"""GET: Requests a stash."""
 	if not request.json:
 		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 	else:
@@ -141,19 +145,7 @@ def api_return_stash():
 @app.route('/api/v1/accounts/<id>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_id(id):
 	"""GET/PATCH: Returns or patches the object with the given ID if it's an account."""
-	try:
-		object_dict = __return_object_by_id(id)
-	except KeyError:
-		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
-	if not object_dict['object_type'] == "account":
-		return Response('{"error": "Provided ID does not belong to an account."}', status=400, mimetype='application/json')
-
-	if request.method == "GET":
-		return object_dict
-	elif request.method == "PATCH":
-		if not request.json:
-			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-		return __patch_object(id, request.json)
+	return __get_or_patch_method(id, object_type="account")
 
 @app.route('/api/v1/accounts/<bot_id>/invite', methods=['POST'])
 def api_invite_bot_to_conference(bot_id):
@@ -195,31 +187,9 @@ def api_get_or_patch_account_by_name(name):
 @app.route('/api/v1/messages', methods=['POST'])
 def api_post_message():
 	"""POST: Posts a message to the channel specified in the parent_channel value."""
-	if not request.json:
-		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-	elif not request.json['object_type'] == "message":
-		return Response('{"error": "The provided object has an incorrect object_type (should be message)"}', status=400, mimetype='application/json')
-	try:
-		return __post_object(request.json)
-	except KeyError:
-		return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-	except TypeError:
-		return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+	return __post_method(object_type="message")
 
 @app.route('/api/v1/messages/<id>', methods=['PATCH', 'GET'])
 def api_get_or_patch_message_by_id(id):
 	"""GET/PATCH: Returns or patches the object with the given ID if it's a message."""
-	try:
-		object_dict = __return_object_by_id(id)
-	except KeyError:
-		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
-	if not object_dict['object_type'] == "message":
-		return Response('{"error": "Provided ID does not belong to a message."}', status=400, mimetype='application/json')
-
-	if request.method == "GET":
-		return object_dict
-	elif request.method == "PATCH":
-		if not request.json:
-			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-		return __patch_object(id, request.json)
-
+	return __get_or_patch_method(id, object_type="message")
