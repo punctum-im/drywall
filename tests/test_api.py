@@ -162,3 +162,37 @@ def test_api_messages(client):
 	message_post_target_dict = message_post.get_json()
 	message_post_target_dict['id'] = message_post_id
 	assert message_post.get_json() == message_post_target_dict
+
+def test_api_conferences(client):
+	"""Tests conference-related APIs."""
+	conference_id = PregeneratedObjects.ids['conference']
+	conference_dict = PregeneratedObjects.dicts['conference']
+
+	# GET /api/v1/conferences/<id>
+	conference_get = client.get('/api/v1/conferences/' + conference_id)
+	assert conference_get.get_json() == conference_dict
+	assert conference_get.status == "200 OK"
+	assert client.get('/api/v1/conferences/' + PregeneratedObjects.ids['account']).status == "400 BAD REQUEST"
+	assert client.get('/api/v1/conferences/fakeid').status == "404 NOT FOUND"
+
+	# PATCH /api/v1/conferences/<id>
+	conference_id_patch = client.patch('/api/v1/conferences/' + conference_id, json={"name": "customname"})
+	conference_id_patch_json = conference_id_patch.get_json()
+	assert conference_id_patch.status == "200 OK"
+	conference_patch_dict_target = {}
+	for key, value in conference_dict.items():
+		conference_patch_dict_target[key] = value
+	conference_patch_dict_target['name'] = "customname"
+	assert conference_id_patch_json == conference_patch_dict_target
+	assert client.patch('/api/v1/conferences/' + PregeneratedObjects.ids['account'], json={"name": "customname"}).status == "400 BAD REQUEST"
+	assert client.patch('/api/v1/conferences/' + conference_id).status == "400 BAD REQUEST"
+	assert client.patch('/api/v1/conferences/fakeid').status == "404 NOT FOUND"
+
+	# POST /api/v1/conferences
+	conference_post = client.post('/api/v1/conferences', json=conference_dict)
+	assert conference_post.status == "200 OK"
+	conference_post_id = conference_post.get_json()['id']
+	conference_post_target_dict = conference_post.get_json()
+	conference_post_target_dict['id'] = conference_post_id
+	assert conference_post.get_json() == conference_post_target_dict
+

@@ -66,18 +66,20 @@ def __get_or_patch_method(id, object_type=None):
 			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 		return __patch_object(id, request.json)
 
-def __post_method(object_type=None):
+def __post_method(object_type=None, object_dict=None):
 	"""
-	Performs a POST operation using request.json as the input.
+	Performs a POST operation using object_dict as the input.
 	Returns the resulting dict or a Response object in case of failure.
 	"""
-	if not request.json:
+	if not object_dict:
+		object_dict = request.json
+	if not object_dict:
 		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
 	if object_type:
-		if not request.json['object_type'] == object_type:
+		if not object_dict['object_type'] == object_type:
 			return Response('{"error": "The provided object has an incorrect object_type (should be ' + object_type + ')"}', status=400, mimetype='application/json')
 	try:
-		return __post_object(request.json)
+		return __post_object(object_dict)
 	except KeyError:
 		return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
 	except TypeError:
@@ -193,3 +195,16 @@ def api_post_message():
 def api_get_or_patch_message_by_id(id):
 	"""GET/PATCH: Returns or patches the object with the given ID if it's a message."""
 	return __get_or_patch_method(id, object_type="message")
+
+# Conferences
+
+@app.route('/api/v1/conferences', methods=['POST'])
+def api_post_conference():
+	"""POST: Creates a new conference using the provided object."""
+	return __post_method(object_type="conference")
+
+@app.route('/api/v1/conferences/<id>', methods=['PATCH', 'GET'])
+def api_get_or_patch_conference_by_id(id):
+	"""GET/PATCH: Returns or patches the object with the given ID if it's a conference."""
+	return __get_or_patch_method(id, object_type="conference")
+
