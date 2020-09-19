@@ -128,8 +128,8 @@ def get_object_class_by_type(object_type):
 		return Message
 	elif object_type == "conference":
 		return Conference
-	elif object_type == "conference_user":
-		return ConferenceUser
+	elif object_type == "conference_member":
+		return ConferenceMember
 	elif object_type == "invite":
 		return Invite
 	elif object_type == "role":
@@ -252,7 +252,7 @@ class Channel:
 	required_keys = ["name", "permissions", "channel_type"] # the rest is handled during init
 	default_keys = {"permissions": "21101"}
 	key_types = {"name": "string", "permissions": "permission_map", "channel_type": "string", "parent_conference": "id", "members": "id_list", "icon": "string", "description": "string"}
-	id_key_types = {"parent_conference": "conference", "members": "account"}
+	id_key_types = {"parent_conference": "conference", "members": "conference_member"}
 	nonrewritable_keys = ["channel_type", "parent_conference"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -339,12 +339,12 @@ class Conference:
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
 
-class ConferenceUser:
+class ConferenceMember:
 	"""
-	Contains information about a conference user.
+	Contains information about a conference member.
 	"""
 	type = 'object'
-	object_type = 'conference_user'
+	object_type = 'conference_member'
 	valid_keys = ["user_id", "nickname", "roles", "permissions", "banned"]
 	required_keys = ["user_id", "permissions"]
 	default_keys = {"banned": "false", "roles": [], "permissions": "21101"}
@@ -354,7 +354,7 @@ class ConferenceUser:
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
-		Initializes a ConferenceUser object.
+		Initializes a ConferenceMember object.
 
 		Optional arguments:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
