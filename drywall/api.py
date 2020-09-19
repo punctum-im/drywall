@@ -144,6 +144,11 @@ def api_return_stash():
 
 # Accounts
 
+@app.route('/api/v1/accounts', methods=['POST'])
+def api_post_message():
+	"""POST: Creates an Account object."""
+	return __post_method(object_type="account")
+
 @app.route('/api/v1/accounts/<id>', methods=['PATCH', 'GET'])
 def api_get_or_patch_account_by_id(id):
 	"""GET/PATCH: Returns or patches the object with the given ID if it's an account."""
