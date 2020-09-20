@@ -213,3 +213,26 @@ def api_get_or_patch_conference_by_id(id):
 	"""GET/PATCH: Returns or patches the object with the given ID if it's a conference."""
 	return __get_or_patch_method(id, object_type="conference")
 
+@app.route('/api/v1/conferences/<conference_id>/members/<account_id>', methods=['PATCH', 'GET'])
+def api_get_or_patch_conference_member(conference_id, account_id):
+	"""
+	GET/PATCH: Returns or patches the conference_member object for the given account ID, or the
+	conference member if their ID is given and matches the conference provided.
+	"""
+	try:
+		conference_object_dict = __return_object_by_id(conference_id)
+	except KeyError:
+		return Response('{"error": "No conference with given ID found"}', status=404, mimetype='application/json')
+	try:
+		account_object_dict = __return_object_by_id(account_id)
+	except KeyError:
+		return Response('{"error": "No account/conference member with given ID found"}', status=404, mimetype='application/json')
+	account_object_type = account_object_dict['object_type']
+
+	if account_object_type == "account":
+		try:
+			account_object_dict = db.get_object_by_key_value_pair({"object_type": "conference_user", "account_id": account_id}, limit_objects=1)
+			account_object_type = "conference_user"
+		except:
+			return Response('{"error": "User is not in conference"}', status=404, mimetype='application/json')
+
