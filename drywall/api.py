@@ -145,7 +145,7 @@ def api_return_stash():
 # Accounts
 
 @app.route('/api/v1/accounts', methods=['POST'])
-def api_post_message():
+def api_post_accounts():
 	"""POST: Creates an Account object."""
 	return __post_method(object_type="account")
 
