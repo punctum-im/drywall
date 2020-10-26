@@ -4,235 +4,361 @@ This file contains API path definitions for all API paths.
 """
 from drywall import db_dummy as db
 from drywall import objects
+from drywall import pings
 from drywall import app
 
 import sys
 
+import simplejson as json
 from flask import Flask, Response, request
 
-# Common functions.
-def __return_object_by_id(id):
-	"""
-	Returns an object with a specified ID, as a dictionary. Raises a KeyError
-	if there is no object with the given ID.
-	"""
-	object_dict = db.get_object_as_dict_by_id(str(id))
-	if object_dict:
-		return object_dict
-	else:
-		raise KeyError
+# Function templates
 
-def __post_object(post_dict):
+def api_get(object_id, object_type=None):
 	"""
-	Takes an object dict and adds that object to the database.
-	Returns the resulting object.
+	Gets an object by ID and returns the required object.
 	"""
+	object = db.get_object_as_dict_by_id(object_id)
+	if object == None:
+		return pings.response_from_error(4)
+	if object_type and not object['object_type'] == object_type:
+		return pings.response_from_error(5)
+	return object
+
+def api_patch(object_id, object_type=None):
+	"""
+	Patches an object by ID and returns the required object.
+	"""
+	if not db.get_object_as_dict_by_id(object_id):
+		return pings.response_from_error(4)
+
+	patch_dict = request.json
+	if not patch_dict:
+		return pings.response_from_error(2)
+
 	try:
-		object_dict = objects.make_object_from_dict(post_dict)
-		db.add_object(object_dict)
-	except Exception as e:
-		raise e
-	return object_dict.__dict__
+		object = objects.make_object_from_dict(patch_dict, extend=object_id)
+	except TypeError as e:
+		return pings.response_from_error(10, error_message=e)
+		# TODO: differentiate between the possible typeerrors
+	except KeyError as e:
+		return pings.response_from_error(7, error_message=e)
+	except ValueError as e:
+		return pings.response_from_error(6, error_message=e)
 
-def __patch_object(id, patch_dict):
+	if object_type and not object.__dict__['object_type'] == object_type:
+		return pings.response_from_error(5)
+
+	db.push_object(object_id, object)
+
+	return object.__dict__
+
+def api_post(object_dict, object_type=None):
 	"""
-	Takes an ID and an object dictionary and applies the contents of that object
-	to the object with the given ID. Returns the resulting object.
+	Takes an object and posts it to the server.
 	"""
+	if not object_dict:
+		return pings.response_from_error(2)
+	if object_type and not object_dict['object_type'] == object_type:
+		return pings.response_from_error(5)
+
 	try:
-		object_dict = objects.make_object_from_dict(patch_dict, extend=id)
-		db.push_object(id, object_dict)
-	except Exception as e:
-		raise e
-	return object_dict.__dict__
+		object = objects.make_object_from_dict(object_dict)
+	except TypeError as e:
+		return pings.response_from_error(10, error_message=e)
+		# TODO: differentiate between the possible typeerrors
+	except KeyError as e:
+		return pings.response_from_error(7, error_message=e)
 
-def __get_or_patch_method(id, object_type=None):
-	"""
-	Takes an ID and performs a GET/PATCH operation on the object with the given ID.
-	Returns the resulting dict or a Response object in case of failure.
-	"""
-	try:
-		object_dict = __return_object_by_id(id)
-	except KeyError:
-		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
-	if object_type:
-		if not object_dict['object_type'] == object_type:
-			return Response('{"error": "The requested object is not a(n) ' + str(object_type) + '"}', status=400, mimetype='application/json')
+	db.add_object(object)
 
+	return Response(json.dumps(object.__dict__), status=201, mimetype='application/json')
+
+def api_delete(object_id, object_type=None):
+	"""
+	Deletes an object by ID.
+	"""
+	object = db.get_object_as_dict_by_id(object_id)
+	if not object:
+		return pings.response_from_error(4)
+	if object_type and not object['object_type'] == object_type:
+		return pings.response_from_error(5)
+
+	return {"id": db.delete_object(object_id)}
+
+def api_get_patch_delete(object_id, object_type=None):
+	"""
+	Gets/patches an object by ID depending on the method.
+	"""
 	if request.method == "GET":
-		return object_dict
+		return api_get(object_id, object_type=object_type)
 	elif request.method == "PATCH":
-		if not request.json:
-			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-		return __patch_object(id, request.json)
+		return api_patch(object_id, object_type=object_type)
+	elif request.method == "DELETE":
+		return api_delete(object_id, object_type=object_type)
 
-def __post_method(object_type=None, object_dict=None):
+def api_post_conference_child(conference_id, object_type, object_data):
 	"""
-	Performs a POST operation using object_dict as the input.
-	Returns the resulting dict or a Response object in case of failure.
+	Template for POST /api/v1/conference/<conference_id>/<object_type> APIs
 	"""
-	if not object_dict:
-		object_dict = request.json
-	if not object_dict:
-		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-	if object_type:
-		if not object_dict['object_type'] == object_type:
-			return Response('{"error": "The provided object has an incorrect object_type (should be ' + object_type + ')"}', status=400, mimetype='application/json')
+	if not object_data:
+		return pings.response_from_error(2)
+	data = object_data.copy()
+	data['parent_conference'] = conference_id
+	return api_post(object_data, object_type=object_type)
+
+def api_get_patch_delete_conference_child(conference_id, object_type, object_id):
+	"""
+	Template for GET/PATCH/DELETE actions on conference members, invites, roles
+	etc.
+	"""
 	try:
-		return __post_object(object_dict)
-	except KeyError:
-		return Response('{"error": "Missing value: ' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
-	except TypeError:
-		return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=400, mimetype='application/json')
+		object_get = api_get(object_id)
+		object_get_id = object_get['id']
+	except:
+		return object_get
+	if object_get['parent_conference'] != conference_id:
+		error_message="The given " + object_type + " does not belong to the given conference"
+		return pings.response_from_error(8, error_message=error_message)
+	if request.method == "GET":
+		return object_get
+	else:
+		return api_get_patch_delete(object_get_id, object_type=object_type)
 
+##
+## API methods
+##
 
-###############
-# API methods #
-###############
-
-# IDs and instance info
+# Objects, IDs and our instance
 
 @app.route('/api/v1/instance')
-def api_return_instance():
-	"""Returns information about the instance."""
-	return __return_object_by_id("0")
+def api_get_instance():
+	"""Returns information about the instance (ID 0)."""
+	return db.get_object_as_dict_by_id("0")
 
 @app.route('/api/v1/id', methods=['POST'])
-def api_id():
-	"""POST: Posts an object."""
-	return __post_method()
+def api_post_by_id():
+	"""Takes an object and creates the object on the server."""
+	return api_post(request.json)
 
-@app.route('/api/v1/id/<id>', methods=['PATCH', 'GET'])
-def api_request_or_patch_specific_id(id):
-	"""GET/PATCH: Requests or patches an object by ID."""
-	return __get_or_patch_method(id)
-
-@app.route('/api/v1/id/<id>/type')
-def api_return_object_type_by_id(id):
+@app.route('/api/v1/id/<object_id>', methods=['GET', 'PATCH', 'DELETE'])
+def api_get_patch_delete_by_id(object_id):
 	"""
-	Returns the object type and all other applicable type variables
-	of the object with the given ID
+	Takes an object ID and returns/patches/deletes the object with the
+	provided ID.
 	"""
-	try:
-		object_dict = __return_object_by_id(id)
-	except KeyError:
-		return Response('{"error": "No object with given ID found"}', status=404, mimetype='application/json')
+	return api_get_patch_delete(object_id=object_id)
 
-	ret_dict = {}
-	for key, value in object_dict.items():
-		if key == "id" or key == "type" or key == "object_type" or key == "channel_type" or key == "attachment_type" or key == "embed_type":
-			ret_dict[key] = value
-	return ret_dict
+@app.route('/api/v1/stash/request', methods=['POST'])
+def api_stash_request():
+	"""
+	Creates and returns a new stash.
+	"""
+	data_dict = request.json
+	if not data_dict:
+		return pings.response_from_error(2)
+	if not data_dict['id_list']:
+		return pings.response_from_error(7)
 
-@app.route('/api/v1/stash/request')
-def api_return_stash():
-	"""GET: Requests a stash."""
-	if not request.json:
-		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-	else:
-		if request.json['id_list']:
-			id_list = request.json['id_list']
-		else:
-			return Response('{"error": "Malformed JSON data (there should be a key called id_list containing a list of IDs)"}', status=400, mimetype='application/json')
+	id_list = data_dict['id_list']
+
 	try:
-		stash_dict = db.create_stash(id_list)
-	except ValueError:
-		return Response('{"error": "Too much IDs or no IDs provided (max. 100 IDs)"}', status=400, mimetype='application/json')
-	except KeyError:
-		return Response('{"error": "' + str(sys.exc_info()[1]) + '"}', status=404, mimetype='application/json')
-	return stash_dict
+		stash = objects.create_stash(id_list)
+	except ValueError as e:
+		return pings.response_from_error(11)
+	except KeyError as e:
+		return pings.response_from_error(9, error_message=str(e))
+
+	return stash
+
+# TODO: Federation, authentication, clients
+# Probably will be in separate files, but I'll note it down here for now
 
 # Accounts
 
 @app.route('/api/v1/accounts', methods=['POST'])
-def api_post_accounts():
-	"""POST: Creates an Account object."""
-	return __post_method(object_type="account")
+def api_post_account():
+	"""
+	Takes an Account object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="account")
 
-@app.route('/api/v1/accounts/<id>', methods=['PATCH', 'GET'])
-def api_get_or_patch_account_by_id(id):
-	"""GET/PATCH: Returns or patches the object with the given ID if it's an account."""
-	return __get_or_patch_method(id, object_type="account")
+@app.route('/api/v1/accounts/<account_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_account(account_id):
+	"""
+	Takes the ID of an Account object and returns the object with
+	the provided ID if it's an account.
+	"""
+	return api_get_patch_delete(object_id=account_id, object_type="account")
 
-@app.route('/api/v1/accounts/<bot_id>/invite', methods=['POST'])
-def api_invite_bot_to_conference(bot_id):
-	"""POST: Adds a bot account to a conference."""
-	if not request.json:
-		return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-	else:
-		try:
-			bot_user = __return_object_by_id(id)
-		except KeyError:
-			return Response('{"error": "No object with given ID"}', status=404, mimetype='application/json')
-		if not bot_user['bot']:
-			return Response('{"error": "Provided ID does not belong to a bot"}', status=400, mimetype='application/json')
-		conference_id = request.json['conference_id']
-		if not conference_id:
-			return Response('{"error": "Malformed JSON data (there should be a key called conference_id containing the conference that the bot will be invited to)"}', status=400, mimetype='application/json')
-		# TODO: Figure out how to add a user to a conference
-		# Quickly going through the protocol, it seems like we're missing
-		# a proper endpoint for joining a conference, we'll take care of
-		# that first before we implement this
-
-@app.route('/api/v1/accounts/by-name/<name>', methods=['PATCH', 'GET'])
-def api_get_or_patch_account_by_name(name):
-	"""GET/PATCH: Returns or patches the account with the given name."""
-	object_dict_query = db.get_object_by_key_value_pair({"username": name, "object_type": "account"}, limit_objects=1, discard_if_key_with_name_present=["remote_domain"])
-	if not object_dict_query:
-		return Response('{"error": "No account with given name found"}', status=404, mimetype='application/json')
-	object_dict = object_dict_query[0]
-
-	if request.method == "GET":
-		return object_dict
-	elif request.method == "PATCH":
-		if not request.json:
-			return Response('{"error": "No input, or content type is not application/json"}', status=400, mimetype='application/json')
-		return __patch_object(object_dict['id'], request.json)
-
-# Messages
-
-@app.route('/api/v1/messages', methods=['POST'])
-def api_post_message():
-	"""POST: Posts a message to the channel specified in the parent_channel value."""
-	return __post_method(object_type="message")
-
-@app.route('/api/v1/messages/<id>', methods=['PATCH', 'GET'])
-def api_get_or_patch_message_by_id(id):
-	"""GET/PATCH: Returns or patches the object with the given ID if it's a message."""
-	return __get_or_patch_method(id, object_type="message")
+# TODO: /api/v1/accounts/<account_id>/block
+# Requires authentication
 
 # Conferences
 
 @app.route('/api/v1/conferences', methods=['POST'])
 def api_post_conference():
-	"""POST: Creates a new conference using the provided object."""
-	return __post_method(object_type="conference")
-
-@app.route('/api/v1/conferences/<id>', methods=['PATCH', 'GET'])
-def api_get_or_patch_conference_by_id(id):
-	"""GET/PATCH: Returns or patches the object with the given ID if it's a conference."""
-	return __get_or_patch_method(id, object_type="conference")
-
-@app.route('/api/v1/conferences/<conference_id>/members/<account_id>', methods=['PATCH', 'GET'])
-def api_get_or_patch_conference_member(conference_id, account_id):
 	"""
-	GET/PATCH: Returns or patches the conference_member object for the given account ID, or the
-	conference member if their ID is given and matches the conference provided.
+	Takes a Conference object and creates it on the server.
 	"""
-	try:
-		conference_object_dict = __return_object_by_id(conference_id)
-	except KeyError:
-		return Response('{"error": "No conference with given ID found"}', status=404, mimetype='application/json')
-	try:
-		account_object_dict = __return_object_by_id(account_id)
-	except KeyError:
-		return Response('{"error": "No account/conference member with given ID found"}', status=404, mimetype='application/json')
-	account_object_type = account_object_dict['object_type']
+	return api_post(request.json, object_type="conference")
 
-	if account_object_type == "account":
-		try:
-			account_object_dict = db.get_object_by_key_value_pair({"object_type": "conference_user", "account_id": account_id}, limit_objects=1)
-			account_object_type = "conference_user"
-		except:
-			return Response('{"error": "User is not in conference"}', status=404, mimetype='application/json')
+@app.route('/api/v1/conferences/<conference_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_conference(conference_id):
+	"""
+	Takes the ID of a Conference object and returns the object with
+	the provided ID if it's a conference.
+	"""
+	return api_get_patch_delete(object_id=conference_id, object_type="conference")
 
+@app.route('/api/v1/conferences/<conference_id>/members', methods=['POST'])
+def api_post_conference_member(conference_id):
+	"""
+	Takes a ConferenceMember object and creates it on the server.
+	Assigns the provided conference ID as the parent_conference.
+	"""
+	return api_post_conference_child(conference_id, "conference_member", request.json)
+
+@app.route('/api/v1/conferences/<conference_id>/members/<member_id>',
+           methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_conference_member(conference_id, member_id):
+	"""
+	Gets/patches/deletes a ConferenceMember in the conference by ID.
+	"""
+	return api_get_patch_delete_conference_child(conference_id, "conference_member", member_id)
+
+@app.route('/api/v1/conferences/<conference_id>/channels', methods=['POST'])
+def api_post_conference_channel(conference_id):
+	"""
+	Takes a Channel object and creates it on the server.
+	Assigns the provided conference ID as the parent_conference.
+	"""
+	return api_post_conference_child(conference_id, "channel", request.json)
+
+@app.route('/api/v1/conferences/<conference_id>/channels/<channel_id>',
+           methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_conference_channel(conference_id, channel_id):
+	"""
+	Gets/patches/deletes a channel in the conference by ID.
+	"""
+	return api_get_patch_delete_conference_child(conference_id, "channel", channel_id)
+
+@app.route('/api/v1/conferences/<conference_id>/roles', methods=['POST'])
+def api_post_conference_role(conference_id):
+	"""
+	Takes a Role object and creates it on the server.
+	Assigns the provided conference ID as the parent_conference.
+	"""
+	return api_post_conference_child(conference_id, "role", request.json)
+
+@app.route('/api/v1/conferences/<conference_id>/roles/<role_id>',
+           methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_conference_role(conference_id, role_id):
+	"""
+	Gets/patches/deletes a role in the conference by ID.
+	"""
+	return api_get_patch_delete_conference_child(conference_id, "role", role_id)
+
+@app.route('/api/v1/conferences/<conference_id>/invites', methods=['POST'])
+def api_post_conference_invite(conference_id):
+	"""
+	Takes a Invite object and creates it on the server.
+	Assigns the provided conference ID as the parent_conference.
+	"""
+	return api_post_conference_child(conference_id, "invite", request.json)
+
+@app.route('/api/v1/conferences/<conference_id>/invites/<invite_id>',
+           methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_conference_invite(conference_id, invite_id):
+	"""
+	Gets/patches/deletes a invite in the conference by ID.
+	"""
+	return api_get_patch_delete_conference_child(conference_id, "invite", invite_id)
+
+# Channels
+
+@app.route('/api/v1/channels', methods=['POST'])
+def api_post_channel():
+	"""
+	Takes a Channel object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="channel")
+
+@app.route('/api/v1/channels/<channel_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_channel(channel_id):
+	"""
+	Takes the ID of a Channel object and returns the object with
+	the provided ID if it's a channel.
+	"""
+	return api_get_patch_delete(object_id=channel_id, object_type="channel")
+
+# Messages
+
+@app.route('/api/v1/messages', methods=['POST'])
+def api_post_message():
+	"""
+	Takes a Message object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="message")
+
+@app.route('/api/v1/messages/<message_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_message(message_id):
+	"""
+	Takes the ID of a Message object and returns the object with
+	the provided ID if it's a message.
+	"""
+	return api_get_patch_delete(object_id=message_id, object_type="message")
+
+# Invite
+
+@app.route('/api/v1/invites', methods=['POST'])
+def api_post_invite():
+	"""
+	Takes an Invite object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="invite")
+
+@app.route('/api/v1/invites/<invite_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_invite(invite_id):
+	"""
+	Takes the ID of an Invite object and returns the object with
+	the provided ID if it's an invite.
+	"""
+	return api_get_patch_delete(object_id=invite_id, object_type="invite")
+
+# TODO: /api/v1/invites/<invite_id>/join
+# Needs authentication
+
+# Roles
+
+@app.route('/api/v1/roles', methods=['POST'])
+def api_post_role():
+	"""
+	Takes a Role object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="role")
+
+@app.route('/api/v1/roles/<role_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_role(role_id):
+	"""
+	Takes the ID of a Role object and returns the object with
+	the provided ID if it's a role.
+	"""
+	return api_get_patch_delete(object_id=role_id, object_type="role")
+
+# Attachments
+
+@app.route('/api/v1/attachments', methods=['POST'])
+def api_post_attachment():
+	"""
+	Takes an Attachment object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="attachment")
+
+@app.route('/api/v1/attachments/<attachment_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_attachment(attachment_id):
+	"""
+	Takes the ID of an Attachment object and returns the object with
+	the provided ID if it's an attachment.
+	"""
+	return api_get_patch_delete(object_id=attachment_id, object_type="attachment")

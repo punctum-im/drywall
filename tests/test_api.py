@@ -2,6 +2,9 @@
 # coding: utf-8
 """
 Tests for the API.
+Huge TODO: clean this up, maybe? There's plenty of room for optimization, but
+speed isn't too important here since these are only tests, and they never take
+more than about a second. The code has loads of repetitions, though...
 """
 import pytest
 
@@ -15,6 +18,134 @@ def client():
     with drywall.app.test_client() as client:
         yield client
 
+class PostedObjectDicts:
+	"""
+	Contains posted object dicts for testing DELETE endpoints
+	"""
+	items = {}
+
+def endpoint_test(client, method, endpoint, data=None, object_type=None,
+                  ignore_data=False, ignore_object_type=False, response_code=None,
+                  use_post_values=None):
+	"""
+	Performs some basic tests on the given endpoint.
+
+	Arguments:
+	  - client (required) - provided by the client pytest fixture
+	  - method (required) - HTTP method to use on the endpoint
+	  - endpoint (required) - endpoint
+	  - data - Data to provide, in case of a POST/PATCH method
+	  - object_type - Dictionary with object types for each placeholder
+	  - ignore_data - Ignore data, for POST requests that do not require data
+	  - ignore_object_type - Endpoint is not object-type sensitive
+	  - response_code - Alternative response code
+
+	FOR DEVELOPERS: if adding a feature that copies data to another var, please
+	use data.copy() instead of just data, because just using data will not copy
+	it and instead manipulate whatever's provided in data manually (which can
+	be something from PregeneratedObjects, in which case you'll break all other
+	tests)
+	"""
+	if None == False:
+		raise Exception
+	if use_post_values == None:
+		if method == "POST":
+			use_post_values = False
+		else:
+			use_post_values = True
+	if not response_code:
+		if method == "POST":
+			response_code = "201 CREATED"
+		else:
+			response_code = "200 OK"
+
+	if method == "GET":
+		action = client.get
+	elif method == "PATCH":
+		if not data:
+			raise KeyError("No data provided")
+		action = client.patch
+	elif method == "POST":
+		if not data and not ignore_data:
+			raise KeyError("No data provided")
+		action = client.post
+	elif method == "DELETE":
+		action = client.delete
+	else:
+		raise TypeError("Incorrect method (note methods MUST be all-caps)")
+
+	print("  * Testing " + method + " " + endpoint)
+
+	# Go over object types and fill in the placeholders in the endpoint
+	object_types = list()
+	if object_type:
+		original_endpoint = endpoint
+		if use_post_values:
+			for object in object_type.items():
+				object_types.append(PostedObjectDicts.items[object[1]])
+				endpoint = endpoint.replace(object[0], PostedObjectDicts.items[object[1]]['id'])
+			print("    -> " + endpoint)
+		else:
+			for object in object_type.items():
+				object_types.append(PregeneratedObjects.dicts[object[1]])
+				if object[0]:
+					endpoint = endpoint.replace(object[0], PregeneratedObjects.ids[object[1]])
+			print("    -> " + endpoint)
+
+	# Perform the API endpoint call
+	if data and not ignore_data:
+		action_result = action(endpoint, json=data)
+	else:
+		action_result = action(endpoint)
+
+	# Test the results
+	action_result_json = action_result.get_json()
+	print(action_result_json)
+	assert action_result.status == response_code
+
+	if method == "GET" and object_type:
+		assert action_result_json == object_types[-1]
+	if method == "POST" and data and not ignore_data and "id" in data:
+		assert action_result_json['id'] != data['id']
+		safe_data = data.copy()
+		safe_data['id'] = action_result_json.get('id')
+		assert action_result_json == safe_data
+		PostedObjectDicts.items[action_result_json['object_type']] = action_result_json
+	if method == "PATCH":
+		assert action_result_json != data
+		if object_type:
+			assert action_result_json != object_types[-1]
+			for key in data.keys():
+				assert action_result_json[key] == data[key]
+	if method == "DELETE":
+		assert client.get('/api/v1/id/' + action_result_json['id']).status == "404 NOT FOUND"
+	if data and not ignore_data:
+		action_no_data = action(endpoint)
+		assert action_no_data.status == "400 BAD REQUEST"
+
+	# Try fake ID
+	if method == "GET" or method == "PATCH" or method == "DELETE":
+		if object_type:
+			object_types = list()
+			endpoint = original_endpoint
+			for object in object_type.items():
+				object_types.append(PregeneratedObjects.dicts[object[1]])
+				if object[0]:
+					endpoint = endpoint.replace(object[0], 'fakeid')
+			if not endpoint == original_endpoint:
+				print("       -> Fake ID: " + endpoint)
+				action_result = action(endpoint, json=data)
+				assert action_result.status == "404 NOT FOUND"
+
+	# TODO: Try wrong object type
+	# I had some working code for this, similar to the fake ID handler, but
+	# it'd need to be modified to work with endpoints with two ID values, as
+	# without modifications it will return 404 since the parent ID does not
+	# exist. Also, fake ID will have to be fixed now, but it returns the
+	# correct values nonetheless so... uhhh... it's ok I guess?
+
+	# TODO: check/assert the error codes
+
 class PregeneratedObjects:
 	"""Contains pregenerated objects and their IDs."""
 	pregenerated_objects = generate_objects()
@@ -22,177 +153,122 @@ class PregeneratedObjects:
 	ids = pregenerated_objects[1]
 
 def test_api_id(client):
-	"""Test the ID-related APIs."""
-
-	# GET /api/v1/instance
-	assert client.get('/api/v1/instance').status == "200 OK"
-
-	# GET /api/v1/id/<id>
-	account_get = client.get('/api/v1/id/' + PregeneratedObjects.ids['account'])
-	assert account_get.status == "200 OK"
-	assert account_get.get_json() == PregeneratedObjects.dicts['account']
-	nonexistent_get = client.get('/api/v1/id/fakeid')
-	assert nonexistent_get.status == "404 NOT FOUND"
-
-	# PATCH /api/v1/id/<id>
-	message_patch_dict = {"content": "customcontent"}
-	message_patch = client.patch('/api/v1/id/' + PregeneratedObjects.ids['message'], json=message_patch_dict)
-	message_get = client.get('/api/v1/id/' + PregeneratedObjects.ids['message'])
-	assert message_patch.status == "200 OK"
-	assert message_get.get_json() != PregeneratedObjects.dicts['message']
-	assert message_get.get_json()['content'] == "customcontent"
-	nonexistent_patch = client.patch('/api/v1/id/fakeid', json=message_patch_dict)
-	assert nonexistent_patch.status == "404 NOT FOUND"
-	patch_with_no_json = client.patch('/api/v1/id/' + PregeneratedObjects.ids['message'])
-	assert patch_with_no_json.status == "400 BAD REQUEST"
-
-	# POST /api/v1/id
-	message_json = PregeneratedObjects.dicts['message']
-	object_post = client.post('/api/v1/id', json=message_json)
-	object_post_json = object_post.get_json()
-	assert object_post.status == "200 OK"
-	assert 'error' not in object_post_json
-	assert object_post_json['id'] != PregeneratedObjects.dicts['message']['id']
-	assert object_post_json['type'] == "object"
-	assert object_post_json['object_type'] == "message"
-	object_post_no_json = client.post('/api/v1/id')
-	assert object_post_no_json.status == "400 BAD REQUEST"
-
-	# GET /api/v1/id/<id>/type
-	attachment_get = client.get('/api/v1/id/' + PregeneratedObjects.ids['attachment'] + '/type')
-	attachment_json = attachment_get.get_json()
-	assert attachment_get.status == "200 OK"
-	assert "quoted_message" not in attachment_json
-	assert "id" in attachment_json
-	assert "type" in attachment_json
-	assert "object_type" in attachment_json
-	assert "attachment_type" in attachment_json
-	nonexistent_type_get = client.get('/api/v1/id/fakeid/type')
-	assert nonexistent_type_get.status == "404 NOT FOUND"
-
-	# GET /api/v1/stash/request
-	object_ids = list()
-	for object_id in PregeneratedObjects.ids.values():
-		object_ids.append(object_id)
-	stash_request = {"id_list": object_ids}
-	stash_get = client.get('/api/v1/stash/request', json=stash_request)
-	stash_json = stash_get.get_json()
-	assert stash_get
-	for object_id in object_ids:
-		assert object_id in stash_json
-	stash_get_no_json = client.get('/api/v1/stash/request')
-	assert stash_get_no_json.status == "400 BAD REQUEST"
+	"""Test API endpoints related to objects and IDs."""
+	endpoint_test(client, 'GET', '/api/v1/instance')
+	endpoint_test(client, 'POST', '/api/v1/id', data=PregeneratedObjects.dicts['message'],
+	              object_type={None: "message"}, ignore_object_type=True)
+	endpoint_test(client, 'GET', '/api/v1/id/<id>', object_type={"<id>": "message"},
+	              ignore_object_type=True)
+	endpoint_test(client, 'PATCH', '/api/v1/id/<id>', data={"content": "new_content"},
+	              object_type={"<id>": "message"}, ignore_object_type=True)
+	endpoint_test(client, 'DELETE', '/api/v1/id/<id>', object_type={"<id>": "message"},
+	              ignore_object_type=True)
+	endpoint_test(client, 'POST', '/api/v1/stash/request',
+	              data={"id_list": [PregeneratedObjects.ids['message'],
+	                                PregeneratedObjects.ids['account']]}, response_code="200 OK")
 
 def test_api_accounts(client):
-	"""Tests account-related APIs."""
-	account_id = PregeneratedObjects.ids['account']
-	account_name = PregeneratedObjects.dicts['account']['username']
-	account_dict = PregeneratedObjects.dicts['account']
-
-	# GET /api/v1/accounts/<id>
-	assert client.get('/api/v1/accounts/' + account_id).status == "200 OK"
-	assert client.get('/api/v1/accounts/' + account_id).get_json() == account_dict
-	assert client.get('/api/v1/accounts/' + PregeneratedObjects.ids['message']).status == "400 BAD REQUEST"
-	assert client.get('/api/v1/accounts/fakeid').status == "404 NOT FOUND"
-
-	# PATCH /api/v1/accounts/<id>
-	account_id_patch = client.patch('/api/v1/accounts/' + account_id, json={"bio": "custombio"})
-	account_id_patch_json = account_id_patch.get_json()
-	account_patch_dict_target = {}
-	for key, value in account_dict.items():
-		account_patch_dict_target[key] = value
-	account_patch_dict_target['bio'] = "custombio"
-	assert account_id_patch.status == "200 OK"
-	assert account_id_patch_json == account_patch_dict_target
-	assert client.patch('/api/v1/accounts/' + PregeneratedObjects.ids['message'], json={"bio": "custombio"}).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/accounts/' + account_id).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/accounts/fakeid').status == "404 NOT FOUND"
-
-	# TODO: POST /api/v1/accounts/<bot_id>/invite
-	# This function is not correctly implemented yet, and does not return
-	# anything if everything goes right.
-
-	# GET /api/v1/accounts/by-name/<name>
-	account_name_get = client.get('/api/v1/accounts/by-name/' + account_name)
-	assert account_name_get.status == "200 OK"
-	assert account_name_get.get_json() == account_patch_dict_target
-	assert client.get('/api/v1/accounts/by-name/fakename').status == "404 NOT FOUND"
-
-	# PATCH /api/v1/accounts/by-name/<name>
-	account_patch = client.patch('/api/v1/accounts/by-name/' + account_name, json={"bio": "custombio2"})
-	account_json = account_patch.get_json()
-	account_patch_dict_target['bio'] = "custombio2"
-	assert account_patch.status == "200 OK"
-	assert account_patch.get_json() == account_patch_dict_target
-	account_patch_fake_name = client.patch('/api/v1/account/by-name/fakename', json={"bio": "custombio2"})
-	assert account_patch_fake_name.status == "404 NOT FOUND"
-	account_patch_no_json = client.patch('/api/v1/accounts/by-name/' + account_name)
-	assert account_patch_no_json.status == "400 BAD REQUEST"
-
-def test_api_messages(client):
-	"""Tests message-related APIs."""
-	message_id = PregeneratedObjects.ids['message']
-	message_dict = PregeneratedObjects.dicts['message']
-	message_dict['content'] = "customcontent"
-
-	# GET /api/v1/messages/<id>
-	message_get = client.get('/api/v1/messages/' + message_id)
-	assert message_get.get_json() == message_dict
-	assert message_get.status == "200 OK"
-	assert client.get('/api/v1/messages/' + PregeneratedObjects.ids['account']).status == "400 BAD REQUEST"
-	assert client.get('/api/v1/messages/fakeid').status == "404 NOT FOUND"
-
-	# PATCH /api/v1/messages/<id>
-	message_id_patch = client.patch('/api/v1/messages/' + message_id, json={"content": "customcontent2"})
-	message_id_patch_json = message_id_patch.get_json()
-	assert message_id_patch.status == "200 OK"
-	message_patch_dict_target = {}
-	for key, value in message_dict.items():
-		message_patch_dict_target[key] = value
-	message_patch_dict_target['content'] = "customcontent2"
-	assert message_id_patch_json == message_patch_dict_target
-	assert client.patch('/api/v1/messages/' + PregeneratedObjects.ids['account'], json={"content": "customcontent2"}).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/messages/' + message_id).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/messages/fakeid').status == "404 NOT FOUND"
-
-	# POST /api/v1/messages
-	message_post = client.post('/api/v1/messages', json=message_dict)
-	assert message_post.status == "200 OK"
-	message_post_id = message_post.get_json()['id']
-	message_post_target_dict = message_post.get_json()
-	message_post_target_dict['id'] = message_post_id
-	assert message_post.get_json() == message_post_target_dict
+	"""Test API endpoints related to accounts."""
+	endpoint_test(client, 'POST', '/api/v1/accounts', PregeneratedObjects.dicts['account'],
+	              object_type={None: "account"})
+	endpoint_test(client, 'GET', '/api/v1/accounts/<account_id>', object_type={"<account_id>": "account"})
+	endpoint_test(client, 'PATCH', '/api/v1/accounts/<account_id>', data={"bio": "new_bio"},
+	              object_type={"<account_id>": "account"})
+	endpoint_test(client, 'DELETE', '/api/v1/accounts/<account_id>', object_type={"<account_id>": "account"})
 
 def test_api_conferences(client):
-	"""Tests conference-related APIs."""
-	conference_id = PregeneratedObjects.ids['conference']
-	conference_dict = PregeneratedObjects.dicts['conference']
+	"""Test API endpoints related to conferences."""
+	endpoint_test(client, 'POST', '/api/v1/conferences', PregeneratedObjects.dicts['conference'],
+	              object_type={None: "conference"})
+	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>', object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>', data={"name": "new_name"},
+	              object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>', object_type={"<conference_id>": "conference"})
 
-	# GET /api/v1/conferences/<id>
-	conference_get = client.get('/api/v1/conferences/' + conference_id)
-	assert conference_get.get_json() == conference_dict
-	assert conference_get.status == "200 OK"
-	assert client.get('/api/v1/conferences/' + PregeneratedObjects.ids['account']).status == "400 BAD REQUEST"
-	assert client.get('/api/v1/conferences/fakeid').status == "404 NOT FOUND"
+	# TODO: get these to pass
+	"""
+	endpoint_test(client, 'POST', '/api/v1/conferences/<conference_id>/members', PregeneratedObjects.dicts['conference_member'],
+	              object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>/members/<member_id>',
+	              object_type={"<conference_id>": "conference", "<member_id>": "conference_member"})
+	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>/members/<member_id>',
+	              data={"nickname": "new_nickname"},
+	              object_type={"<conference_id>": "conference", "<member_id>": "conference_member"})
+	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>/members/<member_id>',
+	              object_type={"<conference_id>": "conference", "<member_id>": "conference_member"})
 
-	# PATCH /api/v1/conferences/<id>
-	conference_id_patch = client.patch('/api/v1/conferences/' + conference_id, json={"name": "customname"})
-	conference_id_patch_json = conference_id_patch.get_json()
-	assert conference_id_patch.status == "200 OK"
-	conference_patch_dict_target = {}
-	for key, value in conference_dict.items():
-		conference_patch_dict_target[key] = value
-	conference_patch_dict_target['name'] = "customname"
-	assert conference_id_patch_json == conference_patch_dict_target
-	assert client.patch('/api/v1/conferences/' + PregeneratedObjects.ids['account'], json={"name": "customname"}).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/conferences/' + conference_id).status == "400 BAD REQUEST"
-	assert client.patch('/api/v1/conferences/fakeid').status == "404 NOT FOUND"
+	endpoint_test(client, 'POST', '/api/v1/conferences/<conference_id>/channels', PregeneratedObjects.dicts['channel'],
+	              object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>/channels/<channel_id>',
+	              object_type={"<conference_id>": "conference", "<channel_id>": "channel"})
+	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>/channels/<channel_id>',
+	              data={"name": "new_name"},
+	              object_type={"<conference_id>": "conference", "<channel_id>": "channel"})
+	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>/channels/<channel_id>',
+	              object_type={"<conference_id>": "conference", "<channel_id>": "channel"})
 
-	# POST /api/v1/conferences
-	conference_post = client.post('/api/v1/conferences', json=conference_dict)
-	assert conference_post.status == "200 OK"
-	conference_post_id = conference_post.get_json()['id']
-	conference_post_target_dict = conference_post.get_json()
-	conference_post_target_dict['id'] = conference_post_id
-	assert conference_post.get_json() == conference_post_target_dict
+	endpoint_test(client, 'POST', '/api/v1/conferences/<conference_id>/invites', PregeneratedObjects.dicts['invite'],
+	              object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
+	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
+	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
+	              data={"name": "new_name"},
+	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
+	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
+	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
 
+	endpoint_test(client, 'POST', '/api/v1/conferences/<conference_id>/roles', PregeneratedObjects.dicts['role'],
+	              object_type={"<conference_id>": "conference"})
+	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>/roles/<role_id>',
+	              object_type={"<conference_id>": "conference", "<role_id>": "role"})
+	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>/roles/<role_id>',
+	              data={"name": "new_name"},
+	              object_type={"<conference_id>": "conference", "<role_id>": "role"})
+	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>/roles/<role_id>',
+	              object_type={"<conference_id>": "conference", "<role_id>": "role"})
+	"""
+
+def test_api_channels(client):
+	"""Test API endpoints related to channels."""
+	endpoint_test(client, 'POST', '/api/v1/channels', PregeneratedObjects.dicts['channel'],
+	              object_type={None: "channel"})
+	endpoint_test(client, 'GET', '/api/v1/channels/<channel_id>', object_type={"<channel_id>": "channel"})
+	endpoint_test(client, 'PATCH', '/api/v1/channels/<channel_id>', data={"name": "new_name"},
+	              object_type={"<channel_id>": "channel"})
+	endpoint_test(client, 'DELETE', '/api/v1/channels/<channel_id>', object_type={"<channel_id>": "channel"})
+
+def test_api_messages(client):
+	"""Test API endpoints related to messages."""
+	endpoint_test(client, 'POST', '/api/v1/messages', PregeneratedObjects.dicts['message'],
+	              object_type={None: "message"})
+	endpoint_test(client, 'GET', '/api/v1/messages/<message_id>', object_type={"<message_id>": "message"})
+	endpoint_test(client, 'PATCH', '/api/v1/messages/<message_id>', data={"content": "new_content"},
+	              object_type={"<message_id>": "message"})
+	endpoint_test(client, 'DELETE', '/api/v1/messages/<message_id>', object_type={"<message_id>": "message"})
+
+def test_api_invites(client):
+	"""Test API endpoints related to invites."""
+	endpoint_test(client, 'POST', '/api/v1/invites', PregeneratedObjects.dicts['invite'],
+	              object_type={None: "invite"})
+	endpoint_test(client, 'GET', '/api/v1/invites/<invite_id>', object_type={"<invite_id>": "invite"})
+	endpoint_test(client, 'PATCH', '/api/v1/invites/<invite_id>', data={"name": "new_name"},
+	              object_type={"<invite_id>": "invite"})
+	endpoint_test(client, 'DELETE', '/api/v1/invites/<invite_id>', object_type={"<invite_id>": "invite"})
+
+def test_api_roles(client):
+	"""Test API endpoints related to roles."""
+	endpoint_test(client, 'POST', '/api/v1/roles', PregeneratedObjects.dicts['role'],
+	              object_type={None: "role"})
+	endpoint_test(client, 'GET', '/api/v1/roles/<role_id>', object_type={"<role_id>": "role"})
+	endpoint_test(client, 'PATCH', '/api/v1/roles/<role_id>', data={"name": "new_name"},
+	              object_type={"<role_id>": "role"})
+	endpoint_test(client, 'DELETE', '/api/v1/roles/<role_id>', object_type={"<role_id>": "role"})
+
+def test_api_attachments(client):
+	"""Test API endpoints related to attachments."""
+	endpoint_test(client, 'POST', '/api/v1/attachments', PregeneratedObjects.dicts['attachment'],
+	              object_type={None: "attachment"})
+	endpoint_test(client, 'GET', '/api/v1/attachments/<attachment_id>', object_type={"<attachment_id>": "attachment"})
+	endpoint_test(client, 'PATCH', '/api/v1/attachments/<attachment_id>', data={"title": "new_title"},
+	              object_type={"<attachment_id>": "attachment"})
+	endpoint_test(client, 'DELETE', '/api/v1/attachments/<attachment_id>', object_type={"<attachment_id>": "attachment"})
