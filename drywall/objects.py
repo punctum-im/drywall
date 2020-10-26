@@ -52,6 +52,13 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	"""
 	Common initialization function shared by all objects. Returns a dict.
 	For use in the __init__ function in classes.
+
+	Raises:
+	- TypeError - "No object with the ID given in the key <key> was found."
+	- TypeError - "The object given in the key <key> does not have the
+	               correct type."
+	- ValueError - attempted to rewrite a non-rewritable key
+	- KeyError - missing key
 	"""
 	final_dict = {}
 	final_patch_dict = {}
@@ -66,7 +73,11 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 
 	if patch_dict:
 		# Check for non-rewritable keys
-		if self.nonrewritable_keys:
+		try:
+			self.nonrewritable_keys
+		except AttributeError:
+			pass
+		else:
 			try:
 				any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
@@ -345,11 +356,11 @@ class ConferenceMember:
 	"""
 	type = 'object'
 	object_type = 'conference_member'
-	valid_keys = ["user_id", "nickname", "roles", "permissions", "banned"]
-	required_keys = ["user_id", "permissions"]
+	valid_keys = ["user_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
+	required_keys = ["user_id", "permissions", "parent_conference"]
 	default_keys = {"banned": "false", "roles": [], "permissions": "21101"}
-	key_types = {"user_id": "id", "nickname": "string", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
-	id_key_types = {"user_id": "account", "roles": "role"}
+	key_types = {"user_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
+	id_key_types = {"user_id": "account", "roles": "role", "parent_conference": "conference"}
 	nonrewritable_keys = []
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -466,3 +477,26 @@ class Attachment:
 				raise KeyError("embed_type")
 		else:
 			raise TypeError("Invalid attachment_type: " + __attachment_type)
+
+def create_stash(id_list):
+	"""
+	Takes up to 100 object IDs and returns a dict containing each ID alongside
+	the content of the associated object.
+
+	Raises a KeyError with the missing ID if an ID is not found.
+
+	Raises a ValueError if the ID limit is exceeded.
+	"""
+	if len(id_list) > 100:
+		raise ValueError
+
+	stash = {}
+	stash['type'] = "stash"
+	stash['id_list'] = id_list
+	for id in id_list:
+		if db.id_taken(id):
+			stash[id] = db.get_object_as_dict_by_id(id)
+		else:
+			raise KeyError('ID does not exist: ' + id)
+
+	return stash
