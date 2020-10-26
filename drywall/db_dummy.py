@@ -57,7 +57,7 @@ def manipulate_object(id=None, object=None):
 
 def add_object(object):
 	"""
-	Takes an object and inserts it into the database. Returns the ID of the object.
+	Takes an object and inserts it into the database. Returns the inserted object.
 
 	Returns False if the ID is already taken.
 	"""
@@ -70,12 +70,25 @@ def add_object(object):
 def push_object(id, object):
 	"""
 	Takes an ID and an object, then overwrites the object with said ID in the
-	database. Returns the ID of the object.
+	database. Returns the pushed object.
 
 	Returns False if the ID does not exist.
 	"""
-	if id_taken(id):
+	if id_taken(str(id)):
 		return manipulate_object(id=id, object=object)
+	else:
+		return False
+
+def delete_object(id):
+	"""
+	Takes an object ID and deletes the object with the provided ID from the
+	database. Returns the ID of the deleted object.
+
+	Returns False if the ID does not exist.
+	"""
+	if id_taken(str(id)):
+		del db[str(id)]
+		return(id)
 	else:
 		return False
 
@@ -84,7 +97,7 @@ def id_taken(id):
 	Takes an ID and returns True or False based on whether the ID was found in
 	the database.
 	"""
-	if id in db:
+	if str(id) in db:
 		return True
 	else:
 		return False
@@ -95,7 +108,7 @@ def get_object_as_dict_by_id(id):
 
 	Returns None if the ID is not found in the database.
 	"""
-	if id in db:
+	if str(id) in db:
 		return db[id]
 	else:
 		return None
@@ -131,29 +144,3 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if
 		else:
 			return object_match
 	return None
-
-def create_stash(id_list):
-	"""
-	Takes up to 100 object IDs and returns a dict containing each ID alongside
-	the content of the associated object.
-
-	Raises a KeyError with the missing ID if an ID is not found.
-
-	Raises a ValueError if the ID limit is exceeded.
-	"""
-	if len(id_list) > 100:
-		raise ValueError
-
-	stash = {}
-	stash['type'] = "stash"
-	stash['id_list'] = id_list
-	for id in id_list:
-		if id_taken(id):
-			try:
-				stash[id] = get_object_as_dict_by_id(id)
-			except:
-				raise KeyError('Failed to get object with ID or ID does not exist: ' + id)
-		else:
-			raise KeyError('ID does not exist: ' + id)
-
-	return stash
