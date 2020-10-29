@@ -104,7 +104,10 @@ def api_post_conference_child(conference_id, object_type, object_data):
 	if not object_data:
 		return pings.response_from_error(2)
 	data = object_data.copy()
-	data['parent_conference'] = conference_id
+	if object_data['object_type'] == "invite":
+		data['conference_id'] = conference_id
+	else:
+		data['parent_conference'] = conference_id
 	return api_post(object_data, object_type=object_type)
 
 def api_get_patch_delete_conference_child(conference_id, object_type, object_id):
@@ -113,11 +116,15 @@ def api_get_patch_delete_conference_child(conference_id, object_type, object_id)
 	etc.
 	"""
 	try:
-		object_get = api_get(object_id)
+		object_get = api_get(object_id, object_type=object_type)
 		object_get_id = object_get['id']
 	except:
 		return object_get
-	if object_get['parent_conference'] != conference_id:
+	if object_type == "invite":
+		conference_id_key = "conference_id"
+	else:
+		conference_id_key = "parent_conference"
+	if object_get[conference_id_key] != conference_id:
 		error_message="The given " + object_type + " does not belong to the given conference"
 		return pings.response_from_error(8, error_message=error_message)
 	if request.method == "GET":
