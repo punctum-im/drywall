@@ -72,6 +72,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	final_dict['object_type'] = self.object_type
 
 	if patch_dict:
+		current_object = db.get_object_as_dict_by_id(final_dict['id'])
 		# Check for non-rewritable keys
 		try:
 			self.nonrewritable_keys
@@ -81,7 +82,8 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 			try:
 				any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
-				raise ValueError(e)
+				if str(e) in current_object and not patch_dict[str(e)] == current_object[str(e)]:
+					raise ValueError(e)
 		for key, value in patch_dict.items():
 			if key in self.valid_keys:
 				if self.key_types[key] == 'id':
@@ -413,9 +415,10 @@ class Role:
 	"""
 	type = 'object'
 	object_type = 'role'
-	valid_keys = ["name", "permissions", "color", "description"]
-	required_keys = ["name", "permissions", "color"]
-	key_types = {"name": "string", "permissions": "permission_map", "color": "string"}
+	valid_keys = ["name", "permissions", "color", "description", "parent_conference"]
+	required_keys = ["name", "permissions", "color", "parent_conference"]
+	key_types = {"name": "string", "permissions": "permission_map", "color": "string", "parent_conference": "id"}
+	id_key_types = {"parent_conference": "conference"}
 	default_keys = {"color": "100, 100, 100", "permissions": "21101"}
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
