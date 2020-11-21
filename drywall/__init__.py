@@ -3,9 +3,11 @@
 This file contains definitions of all the API paths and is meant to be ran as a
 Flask app.
 """
+import simplejson as json
 from drywall import objects
-from drywall import settings
 from drywall import db_dummy as db
+
+settings = json.loads(open("config.json", 'r').read())
 
 from flask import Flask
 app = Flask(__name__)
