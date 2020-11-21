@@ -175,7 +175,7 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 		if not list(object.keys())[-1] == None:
 			object = object_types[-1]
 			if object['object_type'] == "message":
-				wrong_type = "attachment"
+				wrong_type = "channel"
 			else:
 				wrong_type = "message"
 			object = list(object_type.keys())[-1]
@@ -310,12 +310,3 @@ def test_api_roles(client):
 	endpoint_test(client, 'PATCH', '/api/v1/roles/<role_id>', data={"name": "new_name"},
 	              object_type={"<role_id>": "role"})
 	endpoint_test(client, 'DELETE', '/api/v1/roles/<role_id>', object_type={"<role_id>": "role"})
-
-def test_api_attachments(client):
-	"""Test API endpoints related to attachments."""
-	endpoint_test(client, 'POST', '/api/v1/attachments', PregeneratedObjects.dicts['attachment'],
-	              object_type={None: "attachment"})
-	endpoint_test(client, 'GET', '/api/v1/attachments/<attachment_id>', object_type={"<attachment_id>": "attachment"})
-	endpoint_test(client, 'PATCH', '/api/v1/attachments/<attachment_id>', data={"title": "new_title"},
-	              object_type={"<attachment_id>": "attachment"})
-	endpoint_test(client, 'DELETE', '/api/v1/attachments/<attachment_id>', object_type={"<attachment_id>": "attachment"})

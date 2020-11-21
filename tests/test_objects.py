@@ -17,7 +17,7 @@ def generate_objects():
 	"""
 	created_objects = {}
 	created_ids = {}
-	for object in ['instance', 'account', 'conference', 'conference_member', 'invite', 'role', 'channel', 'message', 'attachment']:
+	for object in ['instance', 'account', 'conference', 'conference_member', 'invite', 'role', 'channel', 'message']:
 		# Reset the created_dict and set our object class. The latter is used to
 		# get values like required keys, key types, etc. to know how to fill
 		# an object dict.

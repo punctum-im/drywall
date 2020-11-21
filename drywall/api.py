@@ -352,20 +352,3 @@ def api_get_patch_delete_role(role_id):
 	the provided ID if it's a role.
 	"""
 	return api_get_patch_delete(object_id=role_id, object_type="role")
-
-# Attachments
-
-@app.route('/api/v1/attachments', methods=['POST'])
-def api_post_attachment():
-	"""
-	Takes an Attachment object and creates it on the server.
-	"""
-	return api_post(request.json, object_type="attachment")
-
-@app.route('/api/v1/attachments/<attachment_id>', methods=["GET", "PATCH", "DELETE"])
-def api_get_patch_delete_attachment(attachment_id):
-	"""
-	Takes the ID of an Attachment object and returns the object with
-	the provided ID if it's an attachment.
-	"""
-	return api_get_patch_delete(object_id=attachment_id, object_type="attachment")

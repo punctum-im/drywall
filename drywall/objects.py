@@ -147,8 +147,6 @@ def get_object_class_by_type(object_type):
 		return Invite
 	elif object_type == "role":
 		return Role
-	elif object_type == "attachment":
-		return Attachment
 	else:
 		return None
 
@@ -301,10 +299,10 @@ class Message:
 	"""
 	type = 'object'
 	object_type = 'message'
-	valid_keys = ["content", "parent_channel", "author", "post_date", "edit_date", "edited", "attachment", "reactions"]
+	valid_keys = ["content", "parent_channel", "author", "post_date", "edit_date", "edited", "attached_files", "reactions", "reply_to", "replies"]
 	required_keys = ["content", "parent_channel", "author", "post_date", "edited"]
-	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean"}
-	id_key_types = {"parent_channel": "channel", "author": "account"}
+	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean", "attached_files": "list", "reactions": "list", "reply_to": "id", "replies": "id_list"}
+	id_key_types = {"parent_channel": "channel", "author": "account", "reply_to": "message", "replies": "message"}
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
@@ -436,50 +434,6 @@ class Role:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-
-class Attachment:
-	"""
-	Contains information about an attachment.
-	"""
-	type = 'object'
-	object_type = 'attachment'
-	valid_keys = ["attachment_type", "quoted_message", "media_link", "title", "embed_type", "description", "color", "image"]
-	required_keys = ["attachment_type"]
-	key_types = {"attachment_type": "string", "quoted_message": "id", "media_link": "string", "title": "string", "embed_type": "number", "description": "string", "color": "string", "image": "string"}
-	id_key_types = {"quoted_message": "message"}
-	nonrewritable_keys = ["attachment_type"]
-
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes an Attachment object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		# Unfortunately attachments have various types, each with different fields (some required),
-		# so we have to do some extra error checking here.
-		__attachment_type = self.__dict__["attachment_type"]
-		if __attachment_type == "quote":
-			if "quoted_message" not in self.__dict__:
-				raise KeyError("quoted_message")
-		elif __attachment_type == "media":
-			if "media_link" not in self.__dict__:
-				raise KeyError("media_link")
-		elif __attachment_type == "embed":
-			if "title" not in self.__dict__:
-				raise KeyError("title")
-			if "embed_type" not in self.__dict__:
-				raise KeyError("embed_type")
-		else:
-			raise TypeError("Invalid attachment_type: " + __attachment_type)
 
 def create_stash(id_list):
 	"""
