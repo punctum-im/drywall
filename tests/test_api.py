@@ -165,23 +165,28 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 				if object[0]:
 					endpoint = endpoint.replace(object[0], 'fakeid')
 			if not endpoint == original_endpoint:
-				print("       -> Fake ID: " + endpoint)
+				print("       -> Fake ID test: " + endpoint)
 				action_result = action(endpoint, json=data)
 				assert action_result.status == "404 NOT FOUND"
 
 	# Try wrong object type
-	if object_type and not ignore_object_type:
-		object = object_type
-		if not list(object.keys())[-1] == None:
-			object = object_types[-1]
-			if object['object_type'] == "message":
-				wrong_type = "channel"
-			else:
-				wrong_type = "message"
-			object = list(object_type.keys())[-1]
-			endpoint = original_endpoint
-			if object[0]:
-				endpoint = endpoint.replace(object[0], PregeneratedObjects.dicts[wrong_type]['id'])
+	if object_type and not ignore_object_type and list(object_type.keys())[0] == list(object_type.keys())[-1]:
+		correct_object_type = list(object_type.values())[0]
+		if correct_object_type == "message":
+			wrong_type = "channel"
+		else:
+			wrong_type = "message"
+		endpoint = original_endpoint
+		if method == "PATCH" or method == "POST":
+			wrong_type_data = PregeneratedObjects.dicts[wrong_type]
+		if list(object_type.keys())[0] is not None:
+			endpoint = endpoint.replace(list(object_type.keys())[0], PregeneratedObjects.dicts[wrong_type]['id'])
+		print("       -> Wrong object type test: " + endpoint)
+		if method == "PATCH" or method == "POST":
+			action_result = action(endpoint, json=wrong_type_data)
+		else:
+			action_result = action(endpoint)
+		assert action_result.status == "400 BAD REQUEST"
 	# I had some working code for this, similar to the fake ID handler, but
 	# it'd need to be modified to work with endpoints with two ID values, as
 	# without modifications it will return 404 since the parent ID does not
