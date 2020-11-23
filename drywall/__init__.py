@@ -5,9 +5,8 @@ Flask app.
 """
 import simplejson as json
 from drywall import objects
-from drywall import db_dummy as db
-
 settings = json.loads(open("config.json", 'r').read())
+from drywall import db
 
 from flask import Flask
 app = Flask(__name__)

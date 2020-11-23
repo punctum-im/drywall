@@ -2,7 +2,7 @@
 """
 This file contains API path definitions for all API paths.
 """
-from drywall import db_dummy as db
+from drywall import db
 from drywall import objects
 from drywall import pings
 from drywall import app

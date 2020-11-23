@@ -7,7 +7,7 @@ function can be used to quickly generate objects and IDs for testing
 purposes).
 """
 from drywall import objects
-from drywall import db_dummy as db
+from drywall import db
 
 def generate_objects():
 	"""
