@@ -26,7 +26,7 @@ def manipulate_object(id=None, object=None):
 	    manipulate_object(object, id)
 	Takes an object and optionally an ID, then replaces the object in the database
 	with the provided object. If the object does not exist, it will be created.
-	Returns the ID of the object.
+	Returns the manipulated object's dict.
 
 	If you want to add an object to the database, use the add_object function,
 	as it checks if the ID is already present in the database and errors out
