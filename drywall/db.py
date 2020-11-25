@@ -10,8 +10,8 @@ backend = settings.get('db_backend')
 
 if backend == 'dummy':
 	from drywall import db_dummy as db_backend
-#elif backend == 'sqlite':
-#	from drywall import db_sqlite as db_backend
+elif backend == 'sqlite':
+	from drywall import db_sqlite as db_backend
 #elif backend == 'postgres':
 #	from drywall import db_postgres as db_backend
 #elif backend == 'mysql':
@@ -35,9 +35,6 @@ def manipulate_object(id=None, object=None):
 
 	If you want to replace an object with a certain ID with another object,
 	use the push_object function, as it errors out when the ID does not exist.
-
-	These two functions use this function (manipulate_objects) at their core,
-	but implement the necesary checks for convenience.
 
 	Arguments:
 	    object - object that will be pushed

@@ -117,7 +117,6 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if
 	"""
 	Takes a dict with key and value pairs and returns objects that match
 	(contain) all key-value pairs. Returns a list with dicts.
-
 	Optional arguments:
 	  - limit_objects (default: False) - If set to a number, limits the
 	                                     search to the given amount of
