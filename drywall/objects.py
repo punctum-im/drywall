@@ -229,9 +229,9 @@ class Account:
 	"""
 	type = 'object'
 	object_type = 'account'
-	valid_keys = ["username", "short_status", "status", "bio", "index", "email", "bot", "bot_owner", "friends", "blocklist"]
+	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "bot_owner", "friends", "blocklist"]
 	required_keys = ["username", "short_status", "email"]
-	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "friends": "id_list", "blocklist": "id_list"}
+	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
 	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 
@@ -327,10 +327,10 @@ class Conference:
 	"""
 	type = 'object'
 	object_type = 'conference'
-	valid_keys = ["name", "description", "icon", "owner", "index", "permissions", "creation_date", "channels", "users", "roles"]
+	valid_keys = ["name", "description", "icon", "owner", "index_conference", "permissions", "creation_date", "channels", "users", "roles"]
 	required_keys = ["name", "icon", "owner", "permissions", "creation_date"]
-	default_keys = {"index": "false", "channels": [], "users": [], "roles": [], "permissions": "21101"}
-	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list"}
+	default_keys = {"index_conference": "false", "channels": [], "users": [], "roles": [], "permissions": "21101"}
+	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index_conference": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list"}
 	id_key_types = {"owner": "account", "channels": "channel", "users": "account", "roles": "role"}
 	nonrewritable_keys = ["creation_date"]
 
