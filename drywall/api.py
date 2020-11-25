@@ -6,11 +6,23 @@ from drywall import db
 from drywall import objects
 from drywall import pings
 from drywall import app
+from drywall import settings
 
 import sys
 
 import simplejson as json
 from flask import Flask, Response, request
+
+VERSION = "0.1"
+
+# Define our instance, if needed.
+if not db.id_taken('0'):
+	instance_dict = {"type": "object", "object_type": "instance", "address": settings.get('instance_domain'),
+"server_software": "drywall " + VERSION, "name": settings.get('instance_name'), "description":
+settings.get('instance_description')}
+	created_instance_object = objects.make_object_from_dict(instance_dict, extend=0,
+ignore_nonexistent_id_in_extend=True)
+	db.add_object(created_instance_object)
 
 # Function templates
 
