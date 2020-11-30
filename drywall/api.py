@@ -7,6 +7,7 @@ from drywall import objects
 from drywall import pings
 from drywall import app
 from drywall import settings
+from drywall import auth
 
 import sys
 
@@ -27,8 +28,6 @@ if not db.id_taken("0"):
 	db.add_object(created_instance_object)
 else:
 	db.push_object(id="0", object=created_instance_object)
-
-instance = created_instance_object.__dict__
 
 # Function templates
 

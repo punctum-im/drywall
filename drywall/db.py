@@ -84,7 +84,7 @@ def get_object_as_dict_by_id(id):
 	"""
 	return db_backend.get_object_as_dict_by_id(id)
 
-def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if_key_with_name_present=[]):
+def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	"""
 	Takes a dict with key and value pairs and returns objects that match
 	(contain) all key-value pairs. Returns a list with dicts.
@@ -93,8 +93,24 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if
 	  - limit_objects (default: False) - If set to a number, limits the
 	                                     search to the given amount of
 	                                     objects.
-	  - discard_if_key_with_name_present - If any of the key names in this
-	                                       list are found in the object, it
-	                                       is discarded.
 	"""
-	return db_backend.get_object_by_key_value_pair(key_value_dict=key_value_dict, limit_objects=limit_objects, discard_if_key_with_name_present=discard_if_key_with_name_present)
+	return db_backend.get_object_by_key_value_pair(key_value_dict, limit_objects=limit_objects)
+
+def get_user_by_email(email):
+	"""
+	Returns an user's username on the server by email. If not found, returns
+	None.
+	"""
+	return db_backend.get_user_by_email(email)
+
+def add_user(user_dict):
+	"""
+	Adds a new user to the database.
+	"""
+	return db_backend.add_user(user_dict)
+
+def remove_user(email):
+	"""
+	Removes an user from the database.
+	"""
+	return db_backend.remove_user(email)

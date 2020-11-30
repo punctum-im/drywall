@@ -17,6 +17,7 @@ backends.
 """
 
 db = {}
+user_db = []
 
 def manipulate_object(id=None, object=None):
 	"""
@@ -113,29 +114,26 @@ def get_object_as_dict_by_id(id):
 	else:
 		return None
 
-def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if_key_with_name_present=[]):
+def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	"""
 	Takes a dict with key and value pairs and returns objects that match
 	(contain) all key-value pairs. Returns a list with dicts.
+
 	Optional arguments:
 	  - limit_objects (default: False) - If set to a number, limits the
 	                                     search to the given amount of
 	                                     objects.
-	  - discard_if_key_with_name_present - If any of the key names in this
-	                                       list are found in the object, it
-	                                       is discarded.
 	"""
 	object_match = []
 	for object in db.values():
 		keys_satisfied = []
 		for key, value in key_value_dict.items():
 			if key in object:
-				if key in discard_if_key_with_name_present:
-					continue
 				if object[key] == value:
 					keys_satisfied.append(key)
 		if keys_satisfied == list(key_value_dict.keys()):
 			object_match.append(object)
+		print(keys_satisfied)
 
 	if object_match:
 		if limit_objects:
@@ -143,3 +141,25 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False, discard_if
 		else:
 			return object_match
 	return None
+
+def get_user_by_email(email):
+	"""
+	Returns an user's username on the server by email. If not found, returns
+	None.
+	"""
+	for user in user_db:
+		if user[email] == email:
+			return user
+	return None
+
+def add_user(user_dict):
+	"""Adds a new user to the database."""
+	user_db.append(user_dict)
+	return user_dict
+
+def remove_user(email):
+	"""Removes an user from the database."""
+	# This will be implemented once we can figure out all the related
+	# side-effects, like removing/adding stubs to orphaned objects or
+	# removing the user's Account object.
+	raise Exception('stub')
