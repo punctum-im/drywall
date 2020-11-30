@@ -232,6 +232,7 @@ class Account:
 	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "bot_owner", "friends", "blocklist"]
 	required_keys = ["username", "short_status", "email"]
 	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
+	default_keys = {"short_status": 0}
 	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 
