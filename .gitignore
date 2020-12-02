@@ -4,6 +4,7 @@ venv/
 __pycache__/
 
 config.json
+drywall.db
 
 instance/
 
