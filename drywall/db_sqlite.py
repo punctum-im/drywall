@@ -62,6 +62,7 @@ def manipulate_object(id=None, object=None):
 	conn.execute('UPDATE objects SET object_type = "' + object_type + '" WHERE id = "%s";' % (id))
 
 	conn.commit()
+	return object_dict
 
 def add_object(object):
 	"""
@@ -91,6 +92,9 @@ def add_object(object):
 	             (object_id, object_type))
 
 	conn.commit()
+	manipulate_object(id=object_id, object=object)
+
+	return object_dict
 
 def push_object(id, object):
 	"""
@@ -98,8 +102,6 @@ def push_object(id, object):
 	database. Returns the pushed object.
 	Returns False if the ID does not exist.
 	"""
-	conn = sqlite3.connect(db_path)
-
 	if id_taken(str(id)):
 		return manipulate_object(id=id, object=object)
 	else:
