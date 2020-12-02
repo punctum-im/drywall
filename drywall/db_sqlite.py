@@ -7,7 +7,7 @@ from drywall import settings
 from drywall import objects
 
 default_table_vars = "id PRIMARY KEY, object_type NOT NULL"
-
+user_table_vars = "username UNIQUE, email PRIMARY KEY, password NOT NULL, account_id UNIQUE"
 if settings.get('sqlite_db_path'):
 	db_path = settings.get('sqlite_db_path')
 else:
@@ -18,7 +18,9 @@ conn = sqlite3.connect(db_path)
 if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='objects';").fetchone():
 	print('[db_sqlite] Initializing tables...')
 	conn.execute("CREATE TABLE IF NOT EXISTS objects ( " + default_table_vars + " );")
+	conn.execute("CREATE TABLE IF NOT EXISTS users ( " + user_table_vars + " );")
 	for table_name in ['instance', 'account', 'conference', 'channel', 'message', 'role', 'invite', 'conference_member']:
+		print('[db_sqlite] Adding table ' + table_name + "...")
 		columns = objects.default_nonrewritable_keys + objects.get_object_class_by_type(table_name).valid_keys
 		columns = str(columns)[1:-1]
 		conn.execute("CREATE TABLE IF NOT EXISTS " + table_name + " ( " + columns + " );")
@@ -169,3 +171,87 @@ def get_object_as_dict_by_id(id):
 				object_result[key] = list(value[1:-1])
 
 	return object_result
+
+def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
+	"""
+	Takes a dict with key and value pairs and returns objects that match
+	(contain) all key-value pairs. Returns a list with dicts.
+
+	Optional arguments:
+	  - limit_objects (default: False) - If set to a number, limits the
+	                                     search to the given amount of
+	                                     objects.
+	"""
+	conn = sqlite3.connect(db_path)
+
+	query_params = None
+	for key, value in key_value_dict.items():
+		if not query_params:
+			query_params = key + ' = "' + value + '"'
+		else:
+			query_params = query_params + " AND " + key + ' = "' + value + '"'
+
+	try:
+		table = key_value_dict['object_type']
+	except KeyError:
+		raise KeyError("Could not find object_type key in provided dict")
+
+	object_type_class = objects.get_object_class_by_type(table)
+
+	conn.row_factory = sqlite3.Row
+
+	object_query = conn.execute('SELECT * FROM %s WHERE %s' % (table, query_params))
+	object_direct_result = []
+	for row in object_query.fetchall():
+		object_direct_result.append(dict(row))
+
+	object_match = []
+	for object in object_direct_result:
+		object_result = object.copy()
+		for key, value in object.items():
+			if not value:
+				del object_result[key]
+				continue
+			if not key == "id" and not key == "type" and not key == "object_type":
+				key_type = object_type_class.key_types[key]
+				if key_type == "number":
+					object_result[key] = int(value)
+				elif key_type == "list" or key_type == "id_list":
+					object_result[key] = list(value[1:-1])
+		object_match.append(object_result)
+
+	if object_match:
+		if limit_objects:
+			return object_match[:limit_objects]
+		else:
+			return object_match
+	return None
+
+def get_user_by_email(email):
+	"""
+	Returns an user's username on the server by email. If not found, returns
+	None.
+	"""
+	email_query = conn.execute('SELECT * FROM users WHERE email = "%s";' % (email))
+	conn.commit()
+	if email_query:
+		return email_query.fetchone()
+	return None
+
+def quote(string):
+	"""Surrounds value in quotes. Returns surrounded string."""
+	return '"' + string + '"'
+
+def add_user(user_dict):
+	"""Adds a new user to the database."""
+	query = """INSERT INTO users (username, email, password, account_id)
+	           VALUES (%s, %s, %s, %s)""" % (quote(user_dict['username']),
+	quote(user_dict['email']), quote(user_dict['password']),
+	quote(user_dict['account_id']))
+	conn.execute(query)
+	conn.commit()
+	return user_dict
+
+def remove_user(email):
+	"""Removes an user"""
+	raise Exception('stub')
