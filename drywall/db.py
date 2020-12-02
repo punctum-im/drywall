@@ -107,6 +107,8 @@ def add_user(user_dict):
 	"""
 	Adds a new user to the database.
 	"""
+	if get_user_by_email(user_dict['email']):
+		raise ValueError("E-mail is taken.")
 	return db_backend.add_user(user_dict)
 
 def remove_user(email):
