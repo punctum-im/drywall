@@ -133,7 +133,6 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 					keys_satisfied.append(key)
 		if keys_satisfied == list(key_value_dict.keys()):
 			object_match.append(object)
-		print(keys_satisfied)
 
 	if object_match:
 		if limit_objects:
@@ -148,7 +147,7 @@ def get_user_by_email(email):
 	None.
 	"""
 	for user in user_db:
-		if user[email] == email:
+		if user['email'] == email:
 			return user
 	return None
 
