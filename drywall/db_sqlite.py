@@ -234,6 +234,7 @@ def get_user_by_email(email):
 	Returns an user's username on the server by email. If not found, returns
 	None.
 	"""
+	conn = sqlite3.connect(db_path)
 	email_query = conn.execute('SELECT * FROM users WHERE email = "%s";' % (email))
 	conn.commit()
 	if email_query:
@@ -246,6 +247,7 @@ def quote(string):
 
 def add_user(user_dict):
 	"""Adds a new user to the database."""
+	conn = sqlite3.connect(db_path)
 	query = """INSERT INTO users (username, email, password, account_id)
 	           VALUES (%s, %s, %s, %s)""" % (quote(user_dict['username']),
 	quote(user_dict['email']), quote(user_dict['password']),
@@ -256,4 +258,5 @@ def add_user(user_dict):
 
 def remove_user(email):
 	"""Removes an user"""
+	conn = sqlite3.connect(db_path)
 	raise Exception('stub')
