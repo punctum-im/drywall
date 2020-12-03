@@ -84,8 +84,9 @@ def add_object(object):
 
 	# NOTE: This saves every value as a string.
 	columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in object_dict.keys())
-	values = ', '.join("'" + str(x).replace('/', '_') + "'" for x in object_dict.values())
+	values = ', '.join('"' + str(x).replace('/', '_') + '"' for x in object_dict.values())
 	sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % (object_type, columns, values)
+	print(sql)
 	conn.execute(sql)
 
 	conn.execute("INSERT INTO objects (id, object_type) VALUES (?, ?)",
