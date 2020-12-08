@@ -236,10 +236,10 @@ def get_user_by_email(email):
 	None.
 	"""
 	conn = sqlite3.connect(db_path)
+	conn.row_factory = sqlite3.Row
 	email_query = conn.execute('SELECT * FROM users WHERE email = "%s";' % (email))
-	conn.commit()
 	if email_query:
-		return email_query.fetchone()
+		return dict(email_query.fetchone())
 	return None
 
 def quote(string):
