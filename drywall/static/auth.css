@@ -1,0 +1,100 @@
+body {
+	background-color: #52748c; /*#3b5466*/
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+	margin: 0;
+	font-family: 'Noto Sans', sans-serif;
+}
+h1 {
+	font-family: 'Lato', sans-serif;
+}
+#container {
+	background: #eeeeee;
+	padding: 15px;
+	width: 75vw;
+	max-width: 800px;
+	border-radius: 10px;
+	box-sizing: border-box;
+	box-shadow: 0px 0px 10px #0f0f0f;
+	display: flex;
+}
+.icon {
+	text-align: center;
+	flex: 0;
+	padding-right: 15px;
+}
+.content {
+	width: 100%;
+}
+.content h1 { margin: 0 0 10px 0; }
+.content a { color: #30495b !important; }
+.icon i {
+	padding: 10px;
+	border-bottom: 2px #e8e8e8 solid;
+	border-right: 2px #e8e8e8 solid;
+	font-size: 35px;
+	display: flex;
+	align-items: center; justify-content: center;
+	border-radius: 100%;
+	background: #52748c;
+	color: #fff;
+	width: 44px;
+	height: 44px;
+}
+form * { display: block; }
+form .tos-agreement { font-size: 0.9em; display: flex; margin-top: 5px; margin-bottom: -7px; }
+form .tos-agreement * { display: inline; }
+form .tos-agreement input { margin: 0; width: auto; }
+form .tos-agreement label { margin-left: 5px; }
+form label { margin: 4px 0; }
+form input {
+	background: #fff;
+	border: 1px #ccc solid;
+	padding: 5px;
+	border-top-right-radius: 5px;
+	width: 300px;
+}
+form input:active { border-color: #aaa; }
+form #submit {
+	margin: 15px 0 0 0;
+	width: 100px;
+	font-size: 1.05em;
+	background-color: #52748c;
+	color: #fff;
+	border: 1px #42647b solid;
+}
+form #submit:hover {
+	background-color: #587d97;
+}
+form #submit:active {
+	border: 1px #52748c solid;
+	background-color: #48677e;
+}
+.flash {
+	padding: 5px;
+	color: #700000;
+	border: 1px solid #b60000;
+	background-color: #fdd1d1;
+	margin-top: 5px;
+	margin-bottom: 15px;
+	border-radius: 5px;
+	max-width: 300px;
+}
+
+.meta {
+	color: #f2f2f2;
+	right: 0;
+	bottom: 0;
+	position: fixed;
+	margin: 10px;
+}
+.meta a { color: #f8f8f8 !important; }
+.small { display: inline-block; margin-top: 8px; color: #444; font-size: 0.8em; }
+@media only screen and (max-width: 590px) {
+	#container { display: block; }
+	form input { width: 100%; box-sizing: border-box; }
+	form #submit { float: right; }
+	.flash { max-width: initial; width: 100%; box-sizing: border-box; }
+}

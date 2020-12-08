@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block icon %}user{% endblock %}
+
+{% block content %}
+<div id="header">{% block header %}
+	<a href="/">
+  	<img src="/static/logo.png" aria-hidden="true">
+  	<h1>{% block title %}{{ instance_name }}{% endblock %}</h1>
+	</a>
+{% endblock %}</div>
+
+{{ instance_description }}
+<div class="button-box">
+	<a class="button" href="/auth/login">Log in</a>
+	<a class="button" href="/auth/sign_up">Sign up</a>
+</div>
+{% endblock %}

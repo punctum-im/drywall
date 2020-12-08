@@ -5,10 +5,15 @@ Contains authentication code and endpoints.
 from drywall import app
 from drywall import db
 from drywall import objects
+from drywall import web
 
 import hashlib
-from flask import render_template, flash, request
+from flask import render_template, flash, request, redirect, url_for
 from email_validator import validate_email, EmailNotValidError
+# We're using these functions for now; if anyone has any suggestions for
+# whether this is secure or not, see issue #3
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
 
 def register_user(username, email, password):
 	"""
@@ -30,7 +35,7 @@ def register_user(username, email, password):
 	account_id = added_object['id']
 	# Add the user to the user database
 	user_dict = { "username": username, "account_id": account_id, "email": email,
-	              "password": password }
+	              "password": generate_password_hash(password) }
 	db.add_user(user_dict)
 
 @app.route('/auth/sign_up', methods=["GET", "POST"])
@@ -41,13 +46,37 @@ def auth_signup():
 		email = request.form["email"]
 		password = request.form["password"]
 		try:
-			valid_email = validate_email(email)
+			valid_email = str(validate_email(email))
 			register_user(username, valid_email, password)
 		except (ValueError, EmailNotValidError) as e:
 			flash(str(e))
+		else:
+			return redirect(url_for("index_page"))
 
 	instance = db.get_object_as_dict_by_id("0")
 	return render_template("auth/sign_up.html",
+	                       instance_name=instance["name"],
+	                       instance_description=instance["description"],
+	                       instance_domain=instance["address"])
+
+@app.route('/auth/login', methods=["GET", "POST"])
+def auth_login():
+	"""Login page."""
+	if request.method == "POST":
+		email = request.form["email"]
+		password = request.form["password"]
+		try:
+			valid_email = str(validate_email(email))
+			user = db.get_user_by_email(valid_email)
+			print(user)
+			check_password_hash(user['password'], password)
+		except (ValueError, EmailNotValidError) as e:
+			flash(str(e))
+		else:
+			return redirect(url_for("web.client_page"))
+
+	instance = db.get_object_as_dict_by_id("0")
+	return render_template("auth/login.html",
 	                       instance_name=instance["name"],
 	                       instance_description=instance["description"],
 	                       instance_domain=instance["address"])

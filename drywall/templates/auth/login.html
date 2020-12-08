@@ -1,0 +1,18 @@
+{% extends 'base-auth.html' %}
+
+{% block header %}
+  <h1>{% block title %}log in{% endblock %}</h1>
+{% endblock %}
+
+{% block icon %}user{% endblock %}
+
+{% block content %}
+  <form method="post">
+    <label for="email">e-mail</label>
+    <input name="email" id="email" required>
+    <label for="password">password</label>
+    <input type="password" name="password" id="password" required>
+    <input type="submit" id="submit" value="log in">
+  </form>
+  <span class="small">don't have an account? <a href="/auth/sign_up">sign up</a></span>
+{% endblock %}

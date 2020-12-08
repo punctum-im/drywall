@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base-auth.html' %}
 
 {% block header %}
   <h1>{% block title %}sign up{% endblock %}</h1>
@@ -14,6 +14,10 @@
     <input name="email" id="email" required>
     <label for="password">password</label>
     <input type="password" name="password" id="password" required>
+	<div class="tos-agreement">
+		<input type="checkbox" name="agreement" id="agreement" required>
+		<label for="agreement">I agree to the <a href="/about/rules">instance rules</a> and <a href="/about/tos">terms of service</a></label>
+	</div>
     <input type="submit" id="submit" value="sign up">
   </form>
 {% endblock %}
