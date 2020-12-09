@@ -19,6 +19,8 @@ elif backend == 'sqlite':
 else:
 	raise TypeError("Incorrect database backend type " + backend)
 
+# Objects
+
 def manipulate_object(id=None, object=None):
 	"""
 	Usage:
@@ -96,6 +98,8 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 	"""
 	return db_backend.get_object_by_key_value_pair(key_value_dict, limit_objects=limit_objects)
 
+# Users
+
 def get_user_by_email(email):
 	"""
 	Returns an user's username on the server by email. If not found, returns
@@ -116,3 +120,21 @@ def remove_user(email):
 	Removes an user from the database.
 	"""
 	return db_backend.remove_user(email)
+
+# Clients
+
+def get_client_by_id(client_id):
+	"""Returns a client dict by client ID. Returns None if not found."""
+	return db_backend.get_client_by_id(client_id)
+
+def get_clients_for_user(user_id, access_type)
+	"""Returns a dict containing all clients owned/given access to by an user."""
+	return db_backend.get_clients_for_user(user_id, access_type)
+
+def add_client(client_dict):
+	"""Adds a new client to the database."""
+	return db_backend.add_client(client_dict)
+
+def remove_client(client_id):
+	"""Removes a client from the database."""
+	return db_backend.remove_client(client_id)
