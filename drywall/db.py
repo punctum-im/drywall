@@ -127,7 +127,7 @@ def get_client_by_id(client_id):
 	"""Returns a client dict by client ID. Returns None if not found."""
 	return db_backend.get_client_by_id(client_id)
 
-def get_clients_for_user(user_id, access_type)
+def get_clients_for_user(user_id, access_type):
 	"""Returns a dict containing all clients owned/given access to by an user."""
 	return db_backend.get_clients_for_user(user_id, access_type)
 
