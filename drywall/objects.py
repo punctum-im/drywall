@@ -1,10 +1,11 @@
-# coding: utf-8
+# encoding: utf-8
 """
 Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
 from drywall import db
+from drywall import utils
 
 import uuid    # for assign_id function
 
@@ -25,28 +26,6 @@ def assign_id():
 	"""
 	id = uuid.uuid4()
 	return str(id)
-
-def missing_key_from_list_in_dict(test_list, test_dict):
-	"""
-	Takes a list and a dictionary and checks if all keys in the list are present
-	in the dictionary. Raises a KeyError with the missing key if found, returns
-	False otherwise.
-	"""
-	for key in test_list:
-		if key not in test_dict:
-			raise KeyError(key)
-	return False
-
-def any_key_from_list_in_dict(test_list, test_dict):
-	"""
-	Takes a list and a dictionary and checks if any of the keys from the list are
-	present in the dict. Raises a KeyError with the key if found, returns False
-	otherwise.
-	"""
-	for key in test_list:
-		if key in test_dict:
-			raise KeyError(key)
-	return False
 
 def init_object(self, object_dict, force_id=False, patch_dict=False):
 	"""
@@ -80,7 +59,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 			pass
 		else:
 			try:
-				any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
+				utils.any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
 				if str(e) in current_object and not patch_dict[str(e)] == current_object[str(e)]:
 					raise ValueError(e)
@@ -117,7 +96,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 
 	# Check for missing keys
 	try:
-		missing_key_from_list_in_dict(self.required_keys, final_dict)
+		utils.missing_key_from_list_in_dict(self.required_keys, final_dict)
 	except KeyError as e:
 		raise e
 

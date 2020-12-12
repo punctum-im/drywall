@@ -1,0 +1,37 @@
+# encoding: utf-8
+"""
+Common utilities used in various modules.
+"""
+
+def missing_key_from_list_in_dict(test_list, test_dict):
+	"""
+	Takes a list and a dictionary and checks if all keys in the list are present
+	in the dictionary. Raises a KeyError with the missing key if found, returns
+	False otherwise.
+	"""
+	for key in test_list:
+		if key not in test_dict:
+			raise KeyError(key)
+	return False
+
+def any_key_from_list_in_dict(test_list, test_dict):
+	"""
+	Takes a list and a dictionary and checks if any of the keys from the list are
+	present in the dict. Raises a KeyError with the key if found, returns False
+	otherwise.
+	"""
+	for key in test_list:
+		if key in test_dict:
+			raise KeyError(key)
+	return False
+
+def validate_dict(dict_to_validate, valid_keys):
+	"""
+	Takes a dict and a list with valid key names and removes all invalid keys
+	from the given dict. Returns the validated dict.
+	"""
+	validated_dict = dict_to_validate.copy()
+	for key in dict_to_validate.keys():
+		if key not in valid_keys:
+			del validated_dict[key]
+	return validated_dict
