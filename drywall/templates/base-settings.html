@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html">
+	<meta http-equiv="x-ua-compatible" content="ie=edge"/>
+	<meta name="viewport" content="width=device-width">
+
+	<title>{% block title %}{% endblock %} - {{ instance_name }}</title>
+	<meta name="description" content="{{ instance_description }}">
+	<link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}"/>
+	<meta property="og:type" content="website">
+	<meta property="og:title" content="{{ instance_name }}">
+	<meta property="og:url" content="{{ instance_domain }}">
+	<meta property="og:description" content="{{ instance_description }}">
+	<meta property="og:image" content="{{ url_for('static', filename='logo.png') }}">
+	<meta name="twitter:card" content="summary" />
+	<meta name="twitter:site" content="{{ instance_name }}" />
+	<meta name="twitter:description" content="{{ instance_description }}" />
+	<meta name="twitter:image" content="{{ url_for('static', filename='logo.png') }}" />
+
+	<link rel="stylesheet" href="{{ url_for('static', filename='settings.css') }}">
+	<script src="https://kit.fontawesome.com/2ca55af66d.js" crossorigin="anonymous"></script>
+</head>
+<body>
+	<div class="content">
+		<div id="nav">
+			<ul>
+				{% block nav %}{% endblock %}
+			</ul>
+		</div>
+		<div id="settings">
+			<div class="header">
+				<div class="icon"><i class="fas fa-{% block icon %}{% endblock %}" aria-hidden="true"></i></div>
+				{% block header %}{% endblock %}
+			</div>
+			<div class="settings-content">
+				{% block settings %}{% endblock %}
+			</div>
+		</div>
+	</div>
+</body>
+</html>

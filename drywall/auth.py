@@ -1,19 +1,40 @@
 # encoding: utf-8
 """
-Contains authentication code and endpoints.
+Contains code for authentication and OAuth2 support.
 """
 from drywall import app
 from drywall import db
 from drywall import objects
+from drywall import utils
 from drywall import web
 
 import hashlib
-from flask import render_template, flash, request, redirect, url_for
+from flask import render_template, flash, request, redirect, session, url_for
 from email_validator import validate_email, EmailNotValidError
+from uuid import uuid4 # For client IDs
+from secrets import token_hex # For client secrets
 # We're using these functions for now; if anyone has any suggestions for
 # whether this is secure or not, see issue #3
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
+
+##########
+# OAuth2 #
+##########
+
+client_keys = ['client_id', 'client_secret', 'name', 'description', 'owner']
+
+def create_client(client_dict):
+	"""Creates a client from a basic client dict."""
+	client_dict['client_id'] = uuid4()
+	client_dict['client_secret'] = token_hex(16)
+	if "user_id" in session:
+		client_dict['owner'] = session["user_id"]
+	return db.add_client(utils.validate_dict(client_dict, client_keys))
+
+#################
+# User accounts #
+#################
 
 def register_user(username, email, password):
 	"""
@@ -68,13 +89,19 @@ def auth_login():
 		try:
 			valid_email = str(validate_email(email))
 			user = db.get_user_by_email(valid_email)
-			print(user)
-			check_password_hash(user['password'], password)
+			if not user:
+				raise ValueError("User with provided email does not exist.")
+			if not check_password_hash(user['password'], password):
+				raise ValueError("Invalid password.")
 		except (ValueError, EmailNotValidError) as e:
 			flash(str(e))
 		else:
-			return redirect(url_for("web.client_page"))
+			session.clear()
+			session["user_id"] = user["account_id"]
+			return redirect(url_for("client_page"))
 
+	if "user_id" in session:
+		return redirect(url_for("client_page"))
 	instance = db.get_object_as_dict_by_id("0")
 	return render_template("auth/login.html",
 	                       instance_name=instance["name"],

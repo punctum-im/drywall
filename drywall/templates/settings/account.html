@@ -1,0 +1,21 @@
+{% extends 'base-settings.html' %}
+
+{% block nav %}
+<li>Back to client</li>
+<hr>
+<li>Account</li>
+{% endblock %}
+
+{% block icon %}user{% endblock %}
+
+{% block header %}
+<h1>{% block title %}account settings{% endblock %}</h1>
+{% endblock %}
+
+{% block settings %}
+<h2>Some setting category</h2>
+<form method="post">
+	<label for="email">e-mail</label>
+	<input name="email" id="email" required>
+</form>
+{% endblock %}
