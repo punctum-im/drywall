@@ -1,9 +1,16 @@
 body {
 	background-color: #52748c;
 	color: #fff;
-	padding: 20px;
 	margin: 0;
 	font-family: 'Noto Sans', sans-serif;
+	width: 100%;
+}
+
+.content {
+	margin: 0 auto;
+	width: 1024px;
+	padding: 20px;
+	box-sizing: border-box;
 }
 
 h1 {
@@ -42,9 +49,13 @@ h1 {
 
 .button {
 	padding: 5px 10px;
-	max-width: 15%;
+	max-width: 150px;
 	background-color: #283b4a;
 	display: block;
 	color: #fff !important;
 	border-top-right-radius: 10px;
+}
+
+@media only screen and (max-width:1024px) {
+	.content { margin: 0; width: 100%; }
 }
