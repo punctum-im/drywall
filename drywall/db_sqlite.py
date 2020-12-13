@@ -19,6 +19,7 @@ if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=
 	print('[db_sqlite] Initializing tables...')
 	conn.execute("CREATE TABLE IF NOT EXISTS objects ( " + default_table_vars + " );")
 	conn.execute("CREATE TABLE IF NOT EXISTS users ( " + user_table_vars + " );")
+	conn.execute("CREATE TABLE IF NOT EXISTS clients ( " + user_table_vars + " );")
 	for table_name in ['instance', 'account', 'conference', 'channel', 'message', 'role', 'invite', 'conference_member']:
 		print('[db_sqlite] Adding table ' + table_name + "...")
 		columns = objects.default_nonrewritable_keys + objects.get_object_class_by_type(table_name).valid_keys
@@ -159,7 +160,10 @@ def get_object_as_dict_by_id(id):
 	conn.row_factory = sqlite3.Row
 
 	object_query = conn.execute('SELECT * FROM %s WHERE id = "%s"' % (table, id))
-	object_direct_result = dict(object_query.fetchone())
+	try:
+		object_direct_result = dict(object_query.fetchone())
+	except TypeError:
+		return None
 
 	object_result = object_direct_result.copy()
 	for key, value in object_direct_result.items():
