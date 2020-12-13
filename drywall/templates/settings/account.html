@@ -1,9 +1,9 @@
 {% extends 'base-settings.html' %}
 
 {% block nav %}
-<li>Back to client</li>
+<li><a href="/client"><i class="fas fa-chevron-left"></i> Back to client</a></li>
 <hr>
-<li>Account</li>
+<li><a href="#"><i class="fas fa-user"></i> Account</a></li>
 {% endblock %}
 
 {% block icon %}user{% endblock %}
@@ -13,9 +13,13 @@
 {% endblock %}
 
 {% block settings %}
-<h2>Some setting category</h2>
+<div style="float: right;"><span>logged in as {{ user_name }}@{{ instance_domain }}.</span> <a href="/auth/logout">log out</a></div>
+<h2>Account details</h2>
 <form method="post">
+	<label for="username">username</label>
+	<input name="username" id="username" value="{{ user_name }}" required>
 	<label for="email">e-mail</label>
-	<input name="email" id="email" required>
+	<input name="email" id="email" value="{{ user_email }}" required>
+	<input type="submit" id="submit" class="button" value="submit">
 </form>
 {% endblock %}

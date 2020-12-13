@@ -1,5 +1,5 @@
 body {
-	background-color: #52748c;
+	background-color: #3a5364;
 	color: #fff;
 	margin: 0;
 	font-family: 'Noto Sans', sans-serif;
@@ -8,6 +8,8 @@ body {
 
 .content {
 	display: flex;
+	width: 1024px;
+	margin: 0 auto;
 }
 
 h1 {
@@ -22,7 +24,7 @@ h2 {
 }
 
 hr {
-	border-bottom: 2px #e0e0e0 solid;
+	border: 1px transparent solid;
 }
 
 .settings-content { margin-top: 20px; }
@@ -41,11 +43,38 @@ hr {
 	margin: 2px 0 0 0;
 }
 
+#nav li {
+	background-color: #3f6179;
+	border-bottom: 3px #375c77 solid;
+	border-top-right-radius: 5px;
+	margin-bottom: 2px;
+}
+
+#nav li a {
+	padding: 5px;
+	width: 100%;
+	display: inline-block;
+	color: #eee !important;
+	text-decoration: none;
+}
+
+#nav li a i {
+	display: inline-block;
+	width: 24px;
+	box-sizing: border-box;
+	text-align: center;
+	padding: 0 5px;
+}
+
 #settings {
-	width: 75%;
+	background-color: #52748c;
+	width: 80%;
 	box-sizing: border-box;
 	padding: 0 20px;
+	padding-bottom: 20px;
 }
+
+a { color: #eee !important; }
 
 .icon {
     text-align: center;
@@ -113,8 +142,18 @@ form #submit:active {
 	display: block;
 	color: #fff !important;
 	border-top-right-radius: 10px;
+	float: right;
 }
 
 @media only screen and (max-width:1024px) {
 	.content { margin: 0; width: 100%; }
+	#nav { min-width: 200px; flex: 0; }
+	#settings { width: 100%; }
+}
+
+@media only screen and (max-width:600px) {
+	.content { display: block; height: 100vh; box-sizing: border-box; }
+	#nav { height: auto; width: 100%; padding: 20px; }
+	#settings { height: max-content; }
+	.header { height: auto; display: block; }
 }
