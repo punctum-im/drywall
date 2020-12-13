@@ -67,12 +67,15 @@ def auth_signup():
 		email = request.form["email"]
 		password = request.form["password"]
 		try:
-			valid_email = str(validate_email(email))
+			valid_email = validate_email(email).email
 			register_user(username, valid_email, password)
 		except (ValueError, EmailNotValidError) as e:
 			flash(str(e))
 		else:
-			return redirect(url_for("index_page"))
+			session.clear()
+			user = db.get_user_by_email(valid_email)
+			session["user_id"] = user["account_id"]
+			return redirect(url_for("client_page"))
 
 	instance = db.get_object_as_dict_by_id("0")
 	return render_template("auth/sign_up.html",
@@ -87,7 +90,7 @@ def auth_login():
 		email = request.form["email"]
 		password = request.form["password"]
 		try:
-			valid_email = str(validate_email(email))
+			valid_email = validate_email(email).email
 			user = db.get_user_by_email(valid_email)
 			if not user:
 				raise ValueError("User with provided email does not exist.")
@@ -107,3 +110,9 @@ def auth_login():
 	                       instance_name=instance["name"],
 	                       instance_description=instance["description"],
 	                       instance_domain=instance["address"])
+
+@app.route('/auth/logout', methods=["GET", "POST"])
+def auth_logout():
+	"""Logout page."""
+	session.clear()
+	return redirect(url_for("index_page"))
