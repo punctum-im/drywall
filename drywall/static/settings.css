@@ -119,18 +119,10 @@ form input {
     width: 200px;
 }
 form input:active { border-color: #aaa; }
-form #submit {
-    margin: 15px 0 0 0;
-    width: 100px;
-    font-size: 1.05em;
-    background-color: #52748c;
-    color: #fff;
-    border: 1px #42647b solid;
+.button:hover {
+    background-color: #4c6f88;
 }
-form #submit:hover {
-    background-color: #587d97;
-}
-form #submit:active {
+.button:active {
     border: 1px #52748c solid;
     background-color: #48677e;
 }
@@ -138,11 +130,24 @@ form #submit:active {
 .button {
 	padding: 5px 10px;
 	max-width: 150px;
-	background-color: #283b4a;
+	background-color: #4b6c84;
 	display: block;
 	color: #fff !important;
 	border-top-right-radius: 10px;
 	float: right;
+	cursor: pointer;
+    border: 1px #42647b solid;
+}
+
+.flash {
+    padding: 5px;
+    color: #fff;
+    border: 1px solid #700000;
+    background-color: #9d0505;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    max-width: 300px;
 }
 
 @media only screen and (max-width:1024px) {

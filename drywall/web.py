@@ -8,12 +8,8 @@ from drywall import app
 from drywall import objects
 from drywall import settings
 
-from flask import redirect, render_template, request, session, url_for
+from flask import flash, redirect, render_template, request, session, url_for
 from email_validator import validate_email, EmailNotValidError
-
-def update_user():
-	"""Updates the user dict stored in session storage"""
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
 
 ######################
 # Index, information #
@@ -60,6 +56,7 @@ def client_page():
 	"""Client page. If none is provided, redirects to user settings."""
 	if settings.get('client_page'):
 		return redirect(settings.get('client_page'))
+	flash("Client has not been set up! You have been taken to the settings page.")
 	return redirect(url_for('settings_page'))
 
 #################
@@ -77,15 +74,39 @@ def settings_page():
 def settings_account():
 	"""Account settings."""
 	if request.method == "POST":
-		user_dict = db.get_object_as_dict_by_id(session['user_id'])
-		user_dict['username'] == request.form['username'],
-		user_dict['email'] == validate_email(request.form['email']).email
-		db.push_object(session['user_id'], objects.make_object_from_dict(user_dict, extend=session['user_id']))
-		update_user()
+		session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
+		request_form = dict(request.form)
+		account_dict = db.get_object_as_dict_by_id(session['user_id']).copy()
+		user_dict = db.get_user_by_email(account_dict['email']).copy()
+		username = request_form['username']
+		try:
+			email = validate_email(request_form['email']).email
+		except EmailNotValidError as e:
+			flash(str(e))
+		old_email = account_dict['email']
+		if account_dict['username'] != username:
+			account_dict['username'] = username,
+			# Weird bug: during testing, the username set itself to "('USERNAME',)"
+			# no matter what I did. The following line avoids this, and hopefully
+			# won't cause any trouble in the future.
+			account_dict['username'] = tuple(account_dict['username'])[0]
+			user_dict['username'] = account_dict['username']
+		if account_dict['email'] != email:
+			account_dict['email'] = email
+			user_dict['email'] = email
+		try:
+			db.push_object(session['user_id'], objects.make_object_from_dict(account_dict, extend=session['user_id']))
+			db.update_user(old_email, user_dict)
+		except (KeyError, ValueError, TypeError) as e:
+			flash(str(e))
+		session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
+		return redirect(url_for('settings_account'))
 	if not "user_id" in session:
 		return redirect(url_for('auth_login'))
 	instance = db.get_object_as_dict_by_id("0")
-	update_user()
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
+	if not db.get_object_as_dict_by_id(session["user_id"]):
+		return redirect(url_for('auth_logout'))
 	user_dict = session['user_dict']
 	return render_template("settings/account.html",
 	                       user_dict=user_dict,

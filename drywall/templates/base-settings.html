@@ -35,6 +35,9 @@
 				{% block header %}{% endblock %}
 			</div>
 			<div class="settings-content">
+            	{% for message in get_flashed_messages() %}
+            	    <div class="flash">{{ message }}</div>
+            	{% endfor %}
 				{% block settings %}{% endblock %}
 			</div>
 		</div>
