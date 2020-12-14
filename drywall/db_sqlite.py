@@ -28,6 +28,10 @@ if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=
 	conn.commit()
 	print('[db_sqlite] Done.')
 
+###########
+# Objects #
+###########
+
 def manipulate_object(id=None, object=None):
 	"""
 	Usage:
@@ -87,7 +91,6 @@ def add_object(object):
 	columns = ', '.join("`" + str(x).replace('/', '_') + "`" for x in object_dict.keys())
 	values = ', '.join('"' + str(x).replace('/', '_') + '"' for x in object_dict.values())
 	sql = "INSERT INTO %s ( %s ) VALUES ( %s );" % (object_type, columns, values)
-	print(sql)
 	conn.execute(sql)
 
 	conn.execute("INSERT INTO objects (id, object_type) VALUES (?, ?)",
@@ -234,6 +237,10 @@ def get_object_by_key_value_pair(key_value_dict, limit_objects=False):
 			return object_match
 	return None
 
+#########
+# Users #
+#########
+
 def get_user_by_email(email):
 	"""
 	Returns an user's username on the server by email. If not found, returns
@@ -259,6 +266,19 @@ def add_user(user_dict):
 	quote(user_dict['email']), quote(user_dict['password']),
 	quote(user_dict['account_id']))
 	conn.execute(query)
+	conn.commit()
+	return user_dict
+
+def update_user(user_email, user_dict):
+	"""Edits a user."""
+	conn = sqlite3.connect(db_path)
+
+	for key, value in user_dict.items():
+		if key != "email":
+			query = 'UPDATE users SET "' + key + '" = "' + value + '" WHERE "email" = "' + user_email + '";'
+			conn.execute(query)
+	conn.execute('UPDATE users SET "email" = "' + user_dict['email'] + '" WHERE "email" = "' + user_email + '";')
+
 	conn.commit()
 	return user_dict
 

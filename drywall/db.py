@@ -115,6 +115,10 @@ def add_user(user_dict):
 		raise ValueError("E-mail is taken.")
 	return db_backend.add_user(user_dict)
 
+def update_user(user_email, user_dict):
+	"""Adds a new client to the database."""
+	return db_backend.update_user(user_email, user_dict)
+
 def remove_user(email):
 	"""
 	Removes an user from the database.

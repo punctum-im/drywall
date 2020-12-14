@@ -17,7 +17,7 @@ backends.
 """
 
 db = {}
-user_db = []
+user_db = {}
 client_db = {}
 
 # Objects
@@ -151,18 +151,28 @@ def get_user_by_email(email):
 	Returns an user's username on the server by email. If not found, returns
 	None.
 	"""
-	for user in user_db:
-		if user['email'] == email:
-			return user
+	if email in user_db:
+			return user_db[email]
 	return None
 
 def add_user(user_dict):
 	"""Adds a new user to the database."""
-	user_db.append(user_dict)
+	user_db[user_dict["email"]] = user_dict
+	return user_dict
+
+def update_user(user_email, user_dict):
+	"""Edits a user in the database."""
+	if user_email == user_dict['email']:
+		user_db[user_email] = user_dict
+	else:
+		if get_user_by_email(user_dict['email']):
+			raise ValueError("E-mail is taken.")
+		del user_db[user_email]
+		user_db[user_dict['email']] = user_dict
 	return user_dict
 
 def remove_user(email):
-	"""Removes an user from the database."""
+	"""Removes a user from the database."""
 	# This will be implemented once we can figure out all the related
 	# side-effects, like removing/adding stubs to orphaned objects or
 	# removing the user's Account object.
