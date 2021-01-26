@@ -5,9 +5,11 @@ SQLite database backend using the sqlite3 module.
 import sqlite3
 from drywall import settings
 from drywall import objects
+from ast import literal_eval
 
 default_table_vars = "id PRIMARY KEY, object_type NOT NULL"
-user_table_vars = "username UNIQUE, email PRIMARY KEY, password NOT NULL, account_id UNIQUE"
+user_table_vars = "username UNIQUE, email PRIMARY KEY, password NOT NULL, account_id UNIQUE, clients"
+client_table_vars = "client_id PRIMARY KEY, client_secret NOT NULL, name NOT NULL, description NOT NULL, type NOT NULL, scopes NOT NULL, owner, users, account_id"
 if settings.get('sqlite_db_path'):
 	db_path = settings.get('sqlite_db_path')
 else:
@@ -19,7 +21,7 @@ if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=
 	print('[db_sqlite] Initializing tables...')
 	conn.execute("CREATE TABLE IF NOT EXISTS objects ( " + default_table_vars + " );")
 	conn.execute("CREATE TABLE IF NOT EXISTS users ( " + user_table_vars + " );")
-	conn.execute("CREATE TABLE IF NOT EXISTS clients ( " + user_table_vars + " );")
+	conn.execute("CREATE TABLE IF NOT EXISTS clients ( " + client_table_vars + " );")
 	for table_name in ['instance', 'account', 'conference', 'channel', 'message', 'role', 'invite', 'conference_member']:
 		print('[db_sqlite] Adding table ' + table_name + "...")
 		columns = objects.default_nonrewritable_keys + objects.get_object_class_by_type(table_name).valid_keys
@@ -256,7 +258,7 @@ def get_user_by_email(email):
 
 def quote(string):
 	"""Surrounds value in quotes. Returns surrounded string."""
-	return '"' + string + '"'
+	return '"' + str(string) + '"'
 
 def add_user(user_dict):
 	"""Adds a new user to the database."""
@@ -286,3 +288,80 @@ def remove_user(email):
 	"""Removes an user"""
 	conn = sqlite3.connect(db_path)
 	raise Exception('stub')
+
+###########
+# Clients #
+###########
+
+def get_client_by_id(client_id):
+	"""Returns a client dict by client ID. Returns None if not found."""
+	conn = sqlite3.connect(db_path)
+	conn.row_factory = sqlite3.Row
+	id_query = conn.execute('SELECT * FROM clients WHERE id = "%s";' % (email))
+	try:
+		client_dict = dict(id_query.fetchone())
+		client_dict['scopes'] = literal_eval(client_dict['scopes'])
+		return client_dict
+	except TypeError:
+		return None
+
+def get_clients_for_user(user_id, access_type):
+	"""Returns a dict containing all clients owned/given access to by an user."""
+	conn = sqlite3.connect(db_path)
+	conn.row_factory = sqlite3.Row
+	if access_type == "owner":
+		client_query = conn.execute('SELECT * FROM clients WHERE owner = "%s";' % (user_id))
+		try:
+			clients = []
+			for client in list(client_query.fetchall()):
+				client_dict = dict(client)
+				client_dict['scopes'] = literal_eval(client['scopes'])
+				clients.append(client_dict)
+			return clients
+		except:
+			return None
+	elif access_type == "user":
+		raise Exception('stub')
+
+def add_client(client_dict):
+	"""Adds a new client to the database."""
+	conn = sqlite3.connect(db_path)
+	conn.row_factory = sqlite3.Row
+	if client_dict["type"] == "bot":
+		query = """INSERT INTO clients (client_id, client_secret, name, description, type, scopes, owner, account_id)
+	           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""" % (quote(client_dict['client_id']),
+		quote(client_dict['client_secret']),
+		quote(client_dict['name']), quote(client_dict['description']),
+		quote(client_dict['type']), quote(client_dict['scopes']), quote(client_dict['owner']),
+		quote(client_dict['account_id']))
+	else:
+		query = """INSERT INTO clients (client_id, client_secret, name, description, type, scopes, owner)
+	           VALUES (%s, %s, %s, %s, %s, %s, %s)""" % (quote(client_dict['client_id']),
+		quote(client_dict['client_secret']),
+		quote(client_dict['name']), quote(client_dict['description']),
+		quote(client_dict['type']), quote(client_dict['scopes']), quote(client_dict['owner']))
+	conn.execute(query)
+	conn.commit()
+	return client_dict
+
+def update_client(client_id, client_dict):
+	"""Edits a client."""
+	conn = sqlite3.connect(db_path)
+
+	for key, value in client_dict.items():
+		if key != "client_id":
+			query = 'UPDATE clients SET "' + key + '" = "' + str(value) + '" WHERE "client_id" = "' + client_id + '";'
+			print(query)
+			conn.execute(query)
+	conn.execute('UPDATE clients SET "client_id" = "' + client_dict['client_id'] + '" WHERE "client_id" = "' + client_id + '";')
+
+	conn.commit()
+	return client_dict
+
+def remove_client(id):
+	"""Removes a client"""
+	conn = sqlite3.connect(db_path)
+	conn.execute('DELETE FROM clients WHERE client_id = "%s";' % (id))
+	conn.commit()
+	print("TODO: we haven't implemented the account deletion logic yet")
+	return id
