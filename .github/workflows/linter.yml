@@ -32,7 +32,3 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261,C901,E501
     - name: Run tests
       run: tests/.gh_run.sh
-    - uses: codecov/codecov-action@v1.0.13
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: coverage.xml
