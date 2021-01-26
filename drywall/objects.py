@@ -171,6 +171,35 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 
 	return final_object
 
+###############
+# Permissions #
+###############
+
+class Permissions:
+	"""Contains information about permissions."""
+	scopes = {
+		"conference:read": 1,   # See channel
+		"conference:moderate": 4096, # Modify conference
+		"channel:read": 2,      # Read messages in/connect to channel
+		"channel:write": 4,     # Send messages to/speak in channel
+		"channel:moderate": 64, # Modify channel information
+		"message:read": 2,      # Alias for channel:read
+		"message:write": 8,     # Edit and delete own messages
+		"message:moderate": 16, # Pin messages, delete other users' messages
+		"invite:create": 32,    # Create and modify invites
+		"conference_member:write_nick": 128, # Change own nickname
+		"conference_member:moderate_nick": 256, # Change other users' nicknames
+		"conference_member:kick": 512, # Kick users
+		"conference_member:ban": 1024, # Ban users
+		"role:moderate": 2048, # Modify and assign roles
+	}
+	def validate(self, value):
+		"""Validates whether the permission value is correct or not."""
+		if value <= 8191:
+			return value
+		else:
+			raise ValueError
+
 ######################
 # Objects begin here #
 ######################
@@ -209,7 +238,7 @@ class Account:
 	type = 'object'
 	object_type = 'account'
 	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "bot_owner", "friends", "blocklist"]
-	required_keys = ["username", "short_status", "email"]
+	required_keys = ["username", "short_status"]
 	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
 	default_keys = {"short_status": 0}
 	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
