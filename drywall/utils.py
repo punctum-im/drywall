@@ -35,3 +35,26 @@ def validate_dict(dict_to_validate, valid_keys):
 		if key not in valid_keys:
 			del validated_dict[key]
 	return validated_dict
+
+def fill_dict_with_dummy_values(fill_values, target_dict, dummy=False):
+	"""
+	Takes a list of value names and a dict and returns the dict with
+	the selected values replaced with a dummy.
+	"""
+	ret_dict = target_dict.copy()
+	for val in fill_values:
+		if not val in ret_dict:
+			ret_dict[val] = dummy
+	return ret_dict
+
+def replace_values_in_dict_by_value(replace_values, target_dict):
+	"""
+	Takes a dict with value-replacement pairs and replaces all values in the
+	target dict with the replacement. Returns the resulting dict.
+	"""
+	ret_dict = target_dict.copy()
+	for val, replacement in replace_values.items():
+		for key, dict_val in target_dict.items():
+			if str(dict_val) == val:
+				ret_dict[key] = replacement
+	return ret_dict

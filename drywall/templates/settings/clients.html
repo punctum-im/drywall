@@ -1,0 +1,42 @@
+{% extends 'base-settings.html' %}
+
+{% block icon %}laptop{% endblock %}
+
+{% block header %}
+<h1>{% block title %}apps and clients{% endblock %}</h1>
+{% endblock %}
+
+{% block settings %}
+<div style="float: right;">
+<a href="/settings/clients/new" class="button" style="margin-top: -5px; max-width: initial;"><i class="fas fa-plus" style="margin-right: 5px;"></i> Create a new application</a></div>
+
+<h2>My apps</h2>
+<div id="my-apps">
+{% if user_apps %}
+	{% for app in user_apps %}
+	<div class="app">
+		<h3>
+		{% if app['type'] == "bot" %}
+<i class="fas fa-robot" title="{{ app['name'] }} is a bot."></i>
+		{% elif app['type'] == "userapp" %}
+<i class="fas fa-code" title="{{ app['name'] }} is a user app."></i>
+		{% endif %}
+{{ app['name'] }}
+		</h3>
+		<a class="button" style="float: right;" href="/settings/clients/{{ app['client_id'] }}"><i class="fas fa-pencil-alt" style="margin-right: 2px;"></i> Edit</a>
+		<div class="description" style="margin-bottom: 5px; line-height: 1.5em;">{{ app['description'] }}</div>
+		<div style="font-size: 0.9em; color: #ddd;">Client ID: {{ app['client_id'] }}</div>
+		{% if app['type'] == "bot" %}
+		<div style="font-size: 0.9em; color: #ddd;">Account ID: {{ app['account_id'] }}</div>
+		{% endif %}
+		<div class="app-buttonbox"></div>
+	</div>
+	{% endfor %}
+{% else %}
+	<span>Nothing here!</span>
+{% endif %}
+</div>
+
+<h2>Apps with access to my account</h2>
+<div>Nothing here!</div>
+{% endblock %}

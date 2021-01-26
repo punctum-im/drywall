@@ -1,0 +1,156 @@
+{% extends 'base-settings.html' %}
+
+{% block icon %}pencil-alt{% endblock %}
+
+{% block header %}
+<h1>{% block title %}editing "{{ app_dict['name'] }}"{% endblock %}</h1>
+{% endblock %}
+
+{% block settings %}
+<form method="post" name="app-details">
+    <input type="submit" id="submit" class="button" value="submit">
+	<h2>App details</h2>
+    <label for="name">name</label>
+    <input name="name" id="name" value="{{ app_dict['name'] }}" required>
+    <label for="description">description</label>
+    <textarea name="description" id="description" required>{{ app_dict['description'] }}</textarea>
+	<h2>App type</h2>
+	<div class="typebox">
+		<div class="type" id="type-userapp">
+			<h3><i class="fas fa-code"></i> User app</h3>
+			<p>Has access to information about a user, the conferences and channels they're part of (given correct scopes). Choose this if you're working on an app that connects to an user, or if you just need to use the API.</p>
+		</div>
+		<div class="type" id="type-bot">
+			<h3><i class="fas fa-robot"></i> Bot</h3>
+			<p>Can be added to conferences and access information about them and their members. Use this if you want to create a bot which will interact with conference users. This will also create an account for the bot user.</p>
+		</div>
+	</div>
+	<span style="font-size: 15px; color: #ddd;"><b style="display: inline;">Note:</b> This setting cannot be changed.</span>
+	<h2>Scopes</h2>
+    <div id="scopes">
+		<h3>Account</h3>
+		<div class="scopebox">
+			<div class="scope">
+        		<input type="checkbox" name="account-read" id="account-read" {{ app_scopes['account:read'] }}>
+       			<label for="account-read">account:read</label>
+				<span>Read information about accounts, including the user's account (in case of an app that accesses a user's data)</span>
+			</div>
+			<div class="scope">
+    	    	<input type="checkbox" name="account-write" id="account-write" {{ app_scopes['account:write'] }}>
+    	   		<label for="account-write">account:write</label>
+				<span>Modify information about the user's account</span>
+			</div>
+		</div>
+		<h3>Conference</h3>
+		<div class="scopebox">
+			<div class="scope">
+   		   	  	<input type="checkbox" name="conference-read" id="conference-read" {{ app_scopes['conference:read'] }}>
+   	    		<label for="conference-read">conference:read</label>
+				<span>Read information about conferences, see channels in conference</span>
+			</div>
+			<div class="scope">
+   	    	 	<input type="checkbox" name="conference-moderate" id="conference-moderate" {{ app_scopes['conference:moderate'] }}>
+   	    		<label for="conference-write">conference:moderate</label>
+				<span>Modify information about the conference</span>
+			</div>
+		</div>
+		<h3>Channel</h3>
+		<div class="scopebox">
+			<div class="scope">
+	   	     	<input type="checkbox" name="channel-read" id="channel-read" {{ app_scopes['channel:read'] }}>
+   	    		<label for="channel-read">channel:read</label>
+				<span>Read information about channels</span>
+			</div>
+			<div class="scope">
+   	     		<input type="checkbox" name="channel-write" id="channel-write" {{ app_scopes['channel:write'] }}>
+   	    		<label for="channel-write">channel:write</label>
+				<span>Send messages in channel</span>
+			</div>
+			<div class="scope">
+   		     	<input type="checkbox" name="channel-moderate" id="channel-moderate" {{ app_scopes['channel:moderate'] }}>
+   	    		<label for="channel-moderate">channel:moderate</label>
+				<span>Modify channel information (name, description, etc.)</span>
+			</div>
+		</div>
+		<h3>Message</h3>
+		<div class="scopebox">
+			<div class="scope">
+   	     		<input type="checkbox" name="message-write" id="message-write" {{ app_scopes['message:write'] }}>
+   	    		<label for="message-write">message:write</label>
+				<span>Edit and delete own messages</span>
+			</div>
+			<div class="scope">
+   		     	<input type="checkbox" name="message-moderate" id="message-moderate" {{ app_scopes['message:moderate'] }}>
+   	    		<label for="message-moderate">message:moderate</label>
+				<span>Pin messages, delete other users' messages</span>
+			</div>
+		</div>
+		<h3>Invite</h3>
+		<div class="scopebox">
+			<div class="scope">
+   	     		<input type="checkbox" name="invite-create" id="invite-create" {{ app_scopes['invite:create'] }}>
+   	    		<label for="invite-create">invite:create</label>
+				<span>Create and modify own invites</span>
+			</div>
+		</div>
+		<h3>Conference members</h3>
+		<div class="scopebox">
+			<div class="scope">
+   	     		<input type="checkbox" name="conference-member-write-nick" id="conference-member-write-nick" {{ app_scopes['conference_member:write_nick'] }}>
+   	    		<label for="conference-member-write-nick">conference_member:write_nick</label>
+				<span>Change own nickname</span>
+			</div>
+			<div class="scope">
+   	     		<input type="checkbox" name="conference-member-moderate-nick" id="conference-member-moderate-nick" {{ app_scopes['conference_member:moderate_nick'] }}>
+   	    		<label for="conference-member-moderate-nick">conference_member:moderate_nick</label>
+				<span>Change other members' nicknames</span>
+			</div>
+			<div class="scope">
+   	     		<input type="checkbox" name="conference-member-kick" id="conference-member-kick" {{ app_scopes['conference_member:kick'] }}>
+   	    		<label for="conference-member-kick">conference_member:kick</label>
+				<span>Kick conference members</span>
+			</div>
+			<div class="scope">
+   	     		<input type="checkbox" name="conference-member-ban" id="conference-member-ban" {{ app_scopes['conference_member:ban'] }}>
+   	    		<label for="conference-member-ban">conference_member:ban</label>
+				<span>Ban conference members</span>
+			</div>
+		</div>
+		<h3>Roles</h3>
+		<div class="scopebox">
+			<div class="scope">
+   	     		<input type="checkbox" name="role-moderate" id="role-moderate" {{ app_scopes['role:moderate'] }}>
+   	    		<label for="role-moderate">role:moderate</label>
+				<span>Change information about roles</span>
+			</div>
+		</div>
+    </div>
+	<a class="button" style="background-color: #a40d0d;" href="/settings/clients/{{ app_dict['client_id'] }}/remove"><i class="fas fa-trash"></i> Remove</a>
+</form>
+<script>
+	function toggletype(type) {
+		var formInfo = document.forms['app-details'];
+		var userapp = document.getElementById('type-userapp');
+		var bot = document.getElementById('type-bot');
+		switch(type) {
+			case "userapp":
+				bot.classList.remove('type-selected');
+				bot.style.display = "none"
+				userapp.classList.add('type-selected');
+				formInfo.type.value = "userapp";
+				break;
+			case "bot":
+				userapp.classList.remove('type-selected')
+				userapp.style.display = "none"
+				bot.classList.add('type-selected')
+				formInfo.type.value = "bot";
+				break;
+		}
+	}
+	toggletype('{{ app_dict["type"] }}');
+</script>
+<style>
+.typebox { display: block; }
+.type { cursor: default; width: 100%; }
+</style>
+{% endblock %}

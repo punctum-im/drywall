@@ -1,0 +1,13 @@
+{% extends 'base-settings.html' %}
+
+{% block icon %}laptop{% endblock %}
+
+{% block header %}
+<h1>{% block title %}apps and clients{% endblock %}</h1>
+{% endblock %}
+
+{% block settings %}
+<h2>App not found</h2>
+<p style="margin: 2px 0;">Either the link you followed is incorrect, or you do not have access to this app's configuration page. (Note: You can manage your apps and apps with access to your account from the <a href="/settings/clients">Apps/clients tab</a>.)</p>
+<a class="button" style="float: none; max-width: max-content; margin-top: 10px;" href="/settings/clients"><i class="fas fa-chevron-left"></i> Back to client settings</a>
+{% endblock %}

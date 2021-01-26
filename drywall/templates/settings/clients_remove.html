@@ -1,0 +1,14 @@
+{% extends 'base-settings.html' %}
+
+{% block icon %}laptop{% endblock %}
+
+{% block header %}
+<h1>{% block title %}removing "{{ app_dict['name'] }}"{% endblock %}</h1>
+{% endblock %}
+
+{% block settings %}
+<h2>Are you sure you want to remove the app "{{ app_dict["name"] }}"?</h2>
+<p style="margin: 2px 0;">This action is <b>irreversible</b>. Access to your app will automatically be revoked for all users.</p>
+<a class="button" style="float: left; max-width: max-content; margin-top: 10px;" href="/settings/clients/{{ app_dict["client_id"] }}"><i class="fas fa-chevron-left"></i> Cancel</a>
+<form method="post" style="display: inline;"><button style="background-color: #a40d0d; font-size: 1em; margin-top: 10px;" type="submit" id="submit" class="button"><i class="fas fa-trash"></i> Remove</button></form>
+{% endblock %}

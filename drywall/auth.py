@@ -22,15 +22,34 @@ from werkzeug.security import generate_password_hash
 # OAuth2 #
 ##########
 
-client_keys = ['client_id', 'client_secret', 'name', 'description', 'owner']
+class Client:
+	"""Contains information about OAuth2 clients."""
+	client_keys = ['client_id', 'client_secret', 'name', 'description',
+	               'scopes', 'owner', 'type', 'account_id']
 
 def create_client(client_dict):
 	"""Creates a client from a basic client dict."""
-	client_dict['client_id'] = uuid4()
+	client_dict['client_id'] = str(uuid4())
 	client_dict['client_secret'] = token_hex(16)
-	if "user_id" in session:
-		client_dict['owner'] = session["user_id"]
-	return db.add_client(utils.validate_dict(client_dict, client_keys))
+	if client_dict['type'] == "bot":
+		account_proto_dict = { "type": "object", "object_type": "account",
+		                 "username": client_dict["name"] }
+		account_object = objects.Account(account_proto_dict)
+		account_dict = db.add_object(account_object)
+		client_dict['account_id'] = account_dict['id']
+	return db.add_client(utils.validate_dict(client_dict, Client.client_keys))
+
+def edit_client(client_id, client_dict):
+	"""Creates a client from a basic client dict."""
+	if client_dict['type'] == "bot":
+		print(client_dict)
+		account_dict = db.get_object_as_dict_by_id(client_dict["account_id"])
+		if not account_dict:
+			raise KeyError
+		account_dict["username"] = client_dict["name"]
+		account_dict = db.push_object(client_dict["account_id"], objects.Account(account_dict, force_id=client_dict["account_id"]))
+	return db.update_client(client_id, utils.validate_dict(client_dict, Client.client_keys))
+
 
 #################
 # User accounts #

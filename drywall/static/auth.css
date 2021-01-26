@@ -48,7 +48,8 @@ form .tos-agreement { font-size: 0.9em; display: flex; margin-top: 5px; margin-b
 form .tos-agreement * { display: inline; }
 form .tos-agreement input { margin: 0; width: auto; }
 form .tos-agreement label { margin-left: 5px; }
-form label { margin: 4px 0; }
+form label { margin: 4px 0; color: #222; }
+form label i { width: 16px; margin: 0; text-align: center; }
 form input {
 	background: #fff;
 	border: 1px #ccc solid;
