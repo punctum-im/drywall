@@ -139,6 +139,10 @@ def add_client(client_dict):
 	"""Adds a new client to the database."""
 	return db_backend.add_client(client_dict)
 
+def update_client(client_id, client_dict):
+	"""Replaces a client object in the database."""
+	return db_backend.update_client(client_id, client_dict)
+
 def remove_client(client_id):
 	"""Removes a client from the database."""
 	return db_backend.remove_client(client_id)

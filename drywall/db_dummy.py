@@ -211,6 +211,11 @@ def add_client(client_dict):
 	client_db[client_dict['id']] = client_dict
 	return client_dict
 
+def update_client(client_id, client_dict):
+	"""Updates an existing client"""
+	client_db[client_id] = client_dict
+	return client_dict
+
 def remove_client(client_id):
 	"""Removes a client from the database."""
 	del client_db[client_id]
