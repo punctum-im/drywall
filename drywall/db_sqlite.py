@@ -297,7 +297,7 @@ def get_client_by_id(client_id):
 	"""Returns a client dict by client ID. Returns None if not found."""
 	conn = sqlite3.connect(db_path)
 	conn.row_factory = sqlite3.Row
-	id_query = conn.execute('SELECT * FROM clients WHERE id = "%s";' % (email))
+	id_query = conn.execute('SELECT * FROM clients WHERE client_id = "%s";' % (client_id))
 	try:
 		client_dict = dict(id_query.fetchone())
 		client_dict['scopes'] = literal_eval(client_dict['scopes'])
