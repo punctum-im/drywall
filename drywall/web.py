@@ -6,8 +6,8 @@ pages. Authentication pages are defined in the auth module.
 from drywall import db
 from drywall import app
 from drywall import auth
+from drywall import config
 from drywall import objects
-from drywall import settings
 from drywall import utils
 
 from flask import flash, redirect, render_template, request, session, url_for
@@ -56,8 +56,8 @@ def tos_page():
 @app.route('/client')
 def client_page():
 	"""Client page. If none is provided, redirects to user settings."""
-	if settings.get('client_page'):
-		return redirect(settings.get('client_page'))
+	if config.get('client_page'):
+		return redirect(config.get('client_page'))
 	flash("Client has not been set up! You have been taken to the settings page.")
 	return redirect(url_for('settings_page'))
 

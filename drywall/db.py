@@ -3,10 +3,11 @@
 Main database module. Loads the database backend selected in the settings.
 """
 import json
-settings = json.loads(open("config.json", 'r').read())
-if not "db_backend" in settings:
+from drywall import config
+
+if not config.get("db_backend"):
 	raise KeyError("No database backend selected!")
-backend = settings.get('db_backend')
+backend = config.get('db_backend')
 
 if backend == 'dummy':
 	from drywall import db_dummy as db_backend

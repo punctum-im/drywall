@@ -3,15 +3,15 @@
 SQLite database backend using the sqlite3 module.
 """
 import sqlite3
-from drywall import settings
+from drywall import config
 from drywall import objects
 from ast import literal_eval
 
 default_table_vars = "id PRIMARY KEY, object_type NOT NULL"
 user_table_vars = "username UNIQUE, email PRIMARY KEY, password NOT NULL, account_id UNIQUE, clients"
 client_table_vars = "client_id PRIMARY KEY, client_secret NOT NULL, name NOT NULL, description NOT NULL, type NOT NULL, scopes NOT NULL, owner, users, account_id"
-if settings.get('sqlite_db_path'):
-	db_path = settings.get('sqlite_db_path')
+if config.get('sqlite_db_path'):
+	db_path = config.get('sqlite_db_path')
 else:
 	db_path = 'drywall.db'
 
