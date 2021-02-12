@@ -149,6 +149,36 @@ def api_get_patch_delete_conference_child(conference_id, object_type, object_id)
 	else:
 		return api_get_patch_delete(object_get_id, object_type=object_type)
 
+def api_report(report_dict, object_id, object_type=None):
+	"""Template for /api/v1/<type>/<id>/report endpoints."""
+	api_get(object_id, object_type=object_type)
+
+	new_report_dict = {"target": object_id}
+	if 'note' in report_dict:
+		new_report_dict['note'] = report_dict['note']
+	report = objects.make_object_from_dict(new_report_dict)
+
+	db.add_object(report)
+	return Response(json.dumps(report.__dict__), status=201, mimetype='application/json')
+
+def api_report_conference_child(conference_id, report_dict, object_id, object_type):
+	"""
+	Template for POST /api/v1/conference/<conference_id>/<object_type> APIs
+	"""
+	try:
+		object_get = api_get(object_id, object_type=object_type)
+		object_get_id = object_get['id']
+	except:
+		return object_get
+	if object_type == "invite":
+		conference_id_key = "conference_id"
+	else:
+		conference_id_key = "parent_conference"
+	if object_get[conference_id_key] != conference_id:
+		error_message="The given " + object_type + " does not belong to the given conference"
+		return pings.response_from_error(8, error_message=error_message)
+	return api_report(report_dict, object_id, object_type)
+
 ##
 ## API methods
 ##
@@ -172,6 +202,14 @@ def api_get_patch_delete_by_id(object_id):
 	provided ID.
 	"""
 	return api_get_patch_delete(object_id=object_id)
+
+@app.route('/api/v1/id/<object_id>/report', methods=['POST'])
+def api_report_by_id(object_id):
+	"""
+	Takes an object ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, object_id)
 
 @app.route('/api/v1/stash/request', methods=['POST'])
 def api_stash_request():
@@ -215,6 +253,14 @@ def api_get_patch_delete_account(account_id):
 	"""
 	return api_get_patch_delete(object_id=account_id, object_type="account")
 
+@app.route('/api/v1/accounts/<account_id>/report', methods=['POST'])
+def api_report_account(account_id):
+	"""
+	Takes an account ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, account_id, object_type="account")
+
 # TODO: /api/v1/accounts/<account_id>/block
 # Requires authentication
 
@@ -235,6 +281,14 @@ def api_get_patch_delete_conference(conference_id):
 	"""
 	return api_get_patch_delete(object_id=conference_id, object_type="conference")
 
+@app.route('/api/v1/conferences/<conference_id>/report', methods=['POST'])
+def api_report_conference(conference_id):
+	"""
+	Takes a conference ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, conference_id, object_type="conference")
+
 @app.route('/api/v1/conferences/<conference_id>/members', methods=['POST'])
 def api_post_conference_member(conference_id):
 	"""
@@ -250,6 +304,14 @@ def api_get_patch_delete_conference_member(conference_id, member_id):
 	Gets/patches/deletes a ConferenceMember in the conference by ID.
 	"""
 	return api_get_patch_delete_conference_child(conference_id, "conference_member", member_id)
+
+@app.route('/api/v1/conferences/<conference_id>/members/<member_id>/report', methods=['POST'])
+def api_report_conference_member(conference_id, member_id):
+	"""
+	Takes an conference member ID and report data and reports the object with
+	the provided ID.
+	"""
+	return api_report_conference_child(conference_id, request.json, member_id, object_type="conference_member")
 
 @app.route('/api/v1/conferences/<conference_id>/channels', methods=['POST'])
 def api_post_conference_channel(conference_id):
@@ -267,6 +329,14 @@ def api_get_patch_delete_conference_channel(conference_id, channel_id):
 	"""
 	return api_get_patch_delete_conference_child(conference_id, "channel", channel_id)
 
+@app.route('/api/v1/conferences/<conference_id>/channels/<channel_id>/report', methods=['POST'])
+def api_report_conference_channel(conference_id, channel_id):
+	"""
+	Takes a channel ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report_conference_child(conference_id, request.json, channel_id, object_type="channel")
+
 @app.route('/api/v1/conferences/<conference_id>/roles', methods=['POST'])
 def api_post_conference_role(conference_id):
 	"""
@@ -283,6 +353,14 @@ def api_get_patch_delete_conference_role(conference_id, role_id):
 	"""
 	return api_get_patch_delete_conference_child(conference_id, "role", role_id)
 
+@app.route('/api/v1/conferences/<conference_id>/roles/<role_id>/report', methods=['POST'])
+def api_report_conference_role(conference_id, role_id):
+	"""
+	Takes a role ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report_conference_child(conference_id, request.json, role_id, object_type="role")
+
 @app.route('/api/v1/conferences/<conference_id>/invites', methods=['POST'])
 def api_post_conference_invite(conference_id):
 	"""
@@ -298,6 +376,14 @@ def api_get_patch_delete_conference_invite(conference_id, invite_id):
 	Gets/patches/deletes a invite in the conference by ID.
 	"""
 	return api_get_patch_delete_conference_child(conference_id, "invite", invite_id)
+
+@app.route('/api/v1/conferences/<conference_id>/invites/<invite_id>/report', methods=['POST'])
+def api_report_conference_invite(conference_id, invite_id):
+	"""
+	Takes an invite ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report_conference_child(conference_id, request.json, invite_id, object_type="invite")
 
 # Channels
 
@@ -316,6 +402,14 @@ def api_get_patch_delete_channel(channel_id):
 	"""
 	return api_get_patch_delete(object_id=channel_id, object_type="channel")
 
+@app.route('/api/v1/channels/<channel_id>/report', methods=['POST'])
+def api_report_channel(channel_id):
+	"""
+	Takes a channel ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, channel_id, object_type="channel")
+
 # Messages
 
 @app.route('/api/v1/messages', methods=['POST'])
@@ -333,6 +427,14 @@ def api_get_patch_delete_message(message_id):
 	"""
 	return api_get_patch_delete(object_id=message_id, object_type="message")
 
+@app.route('/api/v1/messages/<message_id>/report', methods=['POST'])
+def api_report_message(message_id):
+	"""
+	Takes a message ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, message_id, object_type="message")
+
 # Invite
 
 @app.route('/api/v1/invites', methods=['POST'])
@@ -349,6 +451,14 @@ def api_get_patch_delete_invite(invite_id):
 	the provided ID if it's an invite.
 	"""
 	return api_get_patch_delete(object_id=invite_id, object_type="invite")
+
+@app.route('/api/v1/invites/<invite_id>/report', methods=['POST'])
+def api_report_invite(invite_id):
+	"""
+	Takes an invite ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, invite_id, object_type="invite")
 
 # TODO: /api/v1/invites/<invite_id>/join
 # Needs authentication
@@ -369,3 +479,28 @@ def api_get_patch_delete_role(role_id):
 	the provided ID if it's a role.
 	"""
 	return api_get_patch_delete(object_id=role_id, object_type="role")
+
+@app.route('/api/v1/roles/<role_id>/report', methods=['POST'])
+def api_report_role(role_id):
+	"""
+	Takes an role ID and report data and reports the object with the
+	provided ID.
+	"""
+	return api_report(request.json, role_id, object_type="role")
+
+# Reports
+
+@app.route('/api/v1/reports', methods=['POST'])
+def api_post_report():
+	"""
+	Takes a Report object and creates it on the server.
+	"""
+	return api_post(request.json, object_type="report")
+
+@app.route('/api/v1/reports/<report_id>', methods=["GET", "PATCH", "DELETE"])
+def api_get_patch_delete_report(report_id):
+	"""
+	Takes the ID of a Report object and returns the object with
+	the provided ID if it's a report.
+	"""
+	return api_get_patch_delete(object_id=report_id, object_type="report")

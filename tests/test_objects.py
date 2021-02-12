@@ -6,8 +6,8 @@ tests to extend their functionality (in particular, the generate_objects
 function can be used to quickly generate objects and IDs for testing
 purposes).
 """
-from drywall import objects
 from drywall import db
+from drywall import objects
 
 def generate_objects():
 	"""
@@ -17,7 +17,7 @@ def generate_objects():
 	"""
 	created_objects = {}
 	created_ids = {}
-	for object in ['instance', 'account', 'conference', 'conference_member', 'invite', 'role', 'channel', 'message']:
+	for object in ['instance', 'account', 'conference', 'conference_member', 'invite', 'role', 'channel', 'message', 'report']:
 		# Reset the created_dict and set our object class. The latter is used to
 		# get values like required keys, key types, etc. to know how to fill
 		# an object dict.
@@ -44,7 +44,10 @@ def generate_objects():
 			elif key_type == "permission_map":
 				created_dict[key] = "11111"
 			elif key_type == "id":
-				created_dict[key] = created_ids[object_class.id_key_types[key]]
+				id_key_type = object_class.id_key_types[key]
+				if id_key_type == "any":
+					id_key_type = "message"
+				created_dict[key] = created_ids[id_key_type]
 			elif key_type == "id_list":
 				# While we could just add the same key twice, this might end up
 				# breaking once ID list key deduplication is implemented. A way to

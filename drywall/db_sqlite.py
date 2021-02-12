@@ -22,7 +22,7 @@ if not conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=
 	conn.execute("CREATE TABLE IF NOT EXISTS objects ( " + default_table_vars + " );")
 	conn.execute("CREATE TABLE IF NOT EXISTS users ( " + user_table_vars + " );")
 	conn.execute("CREATE TABLE IF NOT EXISTS clients ( " + client_table_vars + " );")
-	for table_name in ['instance', 'account', 'conference', 'channel', 'message', 'role', 'invite', 'conference_member']:
+	for table_name in ['instance', 'account', 'conference', 'channel', 'message', 'role', 'invite', 'conference_member', 'report']:
 		print('[db_sqlite] Adding table ' + table_name + "...")
 		columns = objects.default_nonrewritable_keys + objects.get_object_class_by_type(table_name).valid_keys
 		columns = str(columns)[1:-1]

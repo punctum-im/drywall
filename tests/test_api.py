@@ -315,3 +315,12 @@ def test_api_roles(client):
 	endpoint_test(client, 'PATCH', '/api/v1/roles/<role_id>', data={"name": "new_name"},
 	              object_type={"<role_id>": "role"})
 	endpoint_test(client, 'DELETE', '/api/v1/roles/<role_id>', object_type={"<role_id>": "role"})
+
+def test_api_reports(client):
+	"""Test API endpoints related to reports."""
+	endpoint_test(client, 'POST', '/api/v1/reports', PregeneratedObjects.dicts['report'],
+	              object_type={None: "report"})
+	endpoint_test(client, 'GET', '/api/v1/reports/<report_id>', object_type={"<report_id>": "report"})
+	endpoint_test(client, 'PATCH', '/api/v1/reports/<report_id>', data={"note": "new_note"},
+	              object_type={"<report_id>": "report"})
+	endpoint_test(client, 'DELETE', '/api/v1/reports/<report_id>', object_type={"<report_id>": "report"})

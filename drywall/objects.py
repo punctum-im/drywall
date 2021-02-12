@@ -69,7 +69,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 					test_object = db.get_object_as_dict_by_id(value)
 					if not test_object:
 						raise TypeError("No object with the ID given in the key '" + key + "' was found.")
-					elif not test_object['object_type'] == self.id_key_types[key]:
+					elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
 						raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 				final_patch_dict[key] = value
 
@@ -80,7 +80,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 				test_object = db.get_object_as_dict_by_id(value)
 				if test_object is None:
 					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
-				elif not test_object['object_type'] == self.id_key_types[key]:
+				elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
 					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 			final_dict[key] = value
 
@@ -126,6 +126,8 @@ def get_object_class_by_type(object_type):
 		return Invite
 	elif object_type == "role":
 		return Role
+	elif object_type == "report":
+		return Report
 	else:
 		return None
 
@@ -431,6 +433,34 @@ class Role:
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
 		Initializes a Role object.
+
+		Optional arguments:
+		  - force_id (default: False) - takes False or an ID, if an ID is given
+		                                sets the object id to the specified ID,
+		                                otherwise the ID is generated with the
+		                                assign_id() function
+		  - patch_dict (default: False) - takes False or a dictionary with keys
+		                                  that will be replaced in the object.
+		                                  (You should probably also set force_id
+		                                  if you use this.)
+		"""
+		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+
+class Report:
+	"""
+	Contains information about a report.
+	"""
+	type = 'object'
+	object_type = 'report'
+	valid_keys = ["target", "note"]
+	required_keys = ["target"]
+	key_types = {"target": "id", "note": "string"}
+	id_key_types = {"target": "any"}
+	nonrewritable_keys = ["target"]
+
+	def __init__(self, object_dict, force_id=False, patch_dict=False):
+		"""
+		Initializes a Report object.
 
 		Optional arguments:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
