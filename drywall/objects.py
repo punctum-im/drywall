@@ -206,6 +206,8 @@ class Permissions:
 # Objects begin here #
 ######################
 
+objects = [Instance, Account, Channel, Message, Conference, ConferenceMember, Invite, Role, Report]
+
 class Instance:
 	"""
 	Contains information about an instance.
