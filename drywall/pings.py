@@ -14,7 +14,7 @@ def response_from_error(error_code, error_message=None):
 	  - error_message - custom error message (if none provided, a default
 	                    will be used
 	"""
-	error = Error(error_code).__dict__
+	error = Error(error_code, error_message).__dict__
 	error_response_code = error['response_code']
 	return Response(json.dumps(error), status=error_response_code, mimetype='application/json')
 
@@ -64,4 +64,4 @@ class Error:
 			raise TypeError("Wrong error_code")
 
 		if error_message:
-			self.error = error_message
+			self.error = str(error_message)
