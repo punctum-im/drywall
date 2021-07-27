@@ -8,6 +8,7 @@ purposes).
 """
 from drywall import db
 from drywall import objects
+from uuid import uuid4
 
 def generate_objects():
 	"""
@@ -36,7 +37,9 @@ def generate_objects():
 					created_dict[key] = "quote"
 					created_dict["quoted_message"] = created_ids["message"]
 				else:
-					created_dict[key] = key + "_string"
+					# We append a random string here to prevent tests from
+					# tripping up on unique keys. We test for those later.
+					created_dict[key] = key + "_string_" + str(uuid4())
 			elif key_type == "number":
 				created_dict[key] = 1
 			elif key_type == "boolean":
@@ -72,3 +75,4 @@ def generate_objects():
 def test_generate_objects():
 	"""For pytest: run the above function"""
 	assert generate_objects()
+
