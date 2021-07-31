@@ -27,6 +27,49 @@ def assign_id():
 	id = uuid.uuid4()
 	return str(id)
 
+def __strip_invalid_keys(self, object_dict):
+	"""
+	Takes an object dict, removes all invalid values and performs a few
+	checks.
+
+	This function is used in the init_object function to avoid redundancy.
+	To properly validate an object dict, turn it into an object with the
+	make_object_from_dict function. This will automatically ensure that
+	all necessary checks have been done.
+	"""
+
+	final_dict = {}
+	for key, value in object_dict.items():
+		if key in self.valid_keys:
+			# Validate ID keys
+			if self.key_types[key] == 'id':
+				test_object = db.get_object_as_dict_by_id(value)
+				if not test_object:
+					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
+				elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
+					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
+
+			# Validate unique keys
+			try:
+				self.unique_keys
+			except AttributeError:
+				pass
+			else:
+				if key in self.unique_keys:
+					unique_key_violations = db.get_object_by_key_value_pair({"object_type": self.object_type, key: value})
+					if unique_key_violations:
+						unique_check_fail = False
+						for mention in unique_key_violations:
+							if mention['id'] != object_dict['id']:
+								print("Expected " + mention['id'] + ", got " + self.id)
+								unique_check_fail = True
+						if unique_check_fail:
+							raise TypeError("The value in the '" + key + "' key is already taken.")
+
+			final_dict[key] = value
+
+	return final_dict
+
 def init_object(self, object_dict, force_id=False, patch_dict=False):
 	"""
 	Common initialization function shared by all objects. Returns a dict.
@@ -39,19 +82,23 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	- ValueError - attempted to rewrite a non-rewritable key
 	- KeyError - missing key
 	"""
-	final_dict = {}
-	final_patch_dict = {}
+	init_dict = {}
 
 	# This is done like this to avoid breakage when the ID = 0.
 	if str(force_id) == "False":
-		final_dict['id'] = assign_id()
+		init_dict['id'] = assign_id()
 	else:
-		final_dict['id'] = str(force_id)
-	final_dict['type'] = self.type
-	final_dict['object_type'] = self.object_type
+		init_dict['id'] = str(force_id)
+	self.id = init_dict['id']
+	init_dict['type'] = self.type
+	init_dict['object_type'] = self.object_type
+
+	for var in ['id', 'type', 'object_type']:
+		if var not in object_dict or object_dict[var] != init_dict[var]:
+			object_dict[var] = init_dict[var]
 
 	if patch_dict:
-		current_object = db.get_object_as_dict_by_id(final_dict['id'])
+		current_object = db.get_object_as_dict_by_id(object_dict['id'])
 		# Check for non-rewritable keys
 		try:
 			self.nonrewritable_keys
@@ -63,26 +110,11 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 			except KeyError as e:
 				if str(e) in current_object and not patch_dict[str(e)] == current_object[str(e)]:
 					raise ValueError(e)
-		for key, value in patch_dict.items():
-			if key in self.valid_keys:
-				if self.key_types[key] == 'id':
-					test_object = db.get_object_as_dict_by_id(value)
-					if not test_object:
-						raise TypeError("No object with the ID given in the key '" + key + "' was found.")
-					elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
-						raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
-				final_patch_dict[key] = value
+		final_patch_dict = __strip_invalid_keys(self, patch_dict)
 
 	# Add all valid keys
-	for key, value in object_dict.items():
-		if key in self.valid_keys:
-			if self.key_types[key] == 'id':
-				test_object = db.get_object_as_dict_by_id(value)
-				if test_object is None:
-					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
-				elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
-					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
-			final_dict[key] = value
+	clean_object_dict = __strip_invalid_keys(self, object_dict)
+	final_dict = {**clean_object_dict, **init_dict}
 
 	# Add default keys if needed
 	try:
@@ -245,6 +277,7 @@ class Account:
 	default_keys = {"short_status": 0}
 	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
+	unique_keys = ["username"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
@@ -401,6 +434,7 @@ class Invite:
 	key_types = {"name": "string", "conference_id": "id", "creator": "id"}
 	id_key_types = {"conference_id": "conference", "creator": "account"}
 	nonrewritable_keys = ["conference_id", "creator"]
+	unique_keys = ["name"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
@@ -473,6 +507,8 @@ class Report:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+
+objects = [Instance, Account, Channel, Message, Conference, ConferenceMember, Invite, Role, Report]
 
 def create_stash(id_list):
 	"""

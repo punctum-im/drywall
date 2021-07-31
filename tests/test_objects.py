@@ -8,6 +8,7 @@ purposes).
 """
 from drywall import db
 from drywall import objects
+from uuid import uuid4
 
 def generate_objects():
 	"""
@@ -36,7 +37,9 @@ def generate_objects():
 					created_dict[key] = "quote"
 					created_dict["quoted_message"] = created_ids["message"]
 				else:
-					created_dict[key] = key + "_string"
+					# We append a random string here to prevent tests from
+					# tripping up on unique keys. We test for those later.
+					created_dict[key] = key + "_string_" + str(uuid4())
 			elif key_type == "number":
 				created_dict[key] = 1
 			elif key_type == "boolean":
@@ -64,7 +67,26 @@ def generate_objects():
 		# created_objects and created_ids dicts, for use in later tests.
 		object_generated_from_dict = objects.make_object_from_dict(created_dict)
 		created_objects[object] = object_generated_from_dict.__dict__
+
+		# We add our objects to the database, as some of them are required for
+		# later tests (like Account objects for the owner variable in Conference
+		# objects). However, this also breaks unique keys, so we need to edit
+		# them to avoid conflicts when generated objects are used in later tests.
 		db.add_object(object_generated_from_dict)
+		try:
+			object_class.unique_keys
+		except:
+			pass
+		else:
+			old_dict = object_generated_from_dict.__dict__
+			patch_dict = old_dict.copy()
+			for key in object_class.unique_keys:
+				if object_class.key_types[key] == "string":
+					patch_dict[key] = key + "_string_" + str(uuid4())
+			if old_dict == patch_dict:
+				raise Exception
+			patch_from_dict = objects.make_object_from_dict(patch_dict, extend=old_dict['id'])
+			db.push_object(old_dict['id'], patch_from_dict)
 		created_ids[object] = object_generated_from_dict.__dict__["id"]
 
 	return [created_objects, created_ids]
@@ -72,3 +94,4 @@ def generate_objects():
 def test_generate_objects():
 	"""For pytest: run the above function"""
 	assert generate_objects()
+
