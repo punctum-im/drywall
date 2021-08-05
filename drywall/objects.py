@@ -345,7 +345,7 @@ class Message:
 	object_type = 'message'
 	valid_keys = ["content", "parent_channel", "author", "post_date", "edit_date", "edited", "attached_files", "reactions", "reply_to", "replies"]
 	required_keys = ["content", "parent_channel", "author", "post_date", "edited"]
-	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean", "attached_files": "list", "reactions": "list", "reply_to": "id", "replies": "id_list"}
+	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean", "edit_date": "date", "attached_files": "list", "reactions": "list", "reply_to": "id", "replies": "id_list"}
 	id_key_types = {"parent_channel": "channel", "author": "account", "reply_to": "message", "replies": "message"}
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
@@ -460,7 +460,7 @@ class Role:
 	object_type = 'role'
 	valid_keys = ["name", "permissions", "color", "description", "parent_conference"]
 	required_keys = ["name", "permissions", "color", "parent_conference"]
-	key_types = {"name": "string", "permissions": "permission_map", "color": "string", "parent_conference": "id"}
+	key_types = {"name": "string", "permissions": "permission_map", "color": "string", "description": "string", "parent_conference": "id"}
 	id_key_types = {"parent_conference": "conference"}
 	default_keys = {"color": "100, 100, 100", "permissions": "21101"}
 
