@@ -6,10 +6,10 @@ from drywall import objects
 
 class FauxTable:
 	"""Table to be turned into an SQLAlchemy table"""
-	columns = {}
 	def __init__(self, class_name, table_name):
 		self.class_name = class_name
 		self.table_name = table_name
+		self.columns = {}
 		self.columns['id'] = "Column('id', String(255), primary_key=True)"
 	def dump_orm(self):
 		print("class " + self.class_name + "(Base):")
@@ -17,6 +17,7 @@ class FauxTable:
 		print("")
 		for col_name, col_info in self.columns.items():
 			print("	" + col_name + " = " + col_info)
+		print("")
 
 def get_object_properties(object):
 	"""Returns a dict containing the properties of an object."""
@@ -79,8 +80,10 @@ def ormify(args):
 		arg_count = arg_count + 1
 		if arg:
 			final_string = final_string + str(arg)
-		if arg_count != args_total:
-			final_string = final_string + ", "
+			if arg_count != args_total:
+				final_string = final_string + ", "
+	if final_string:
+		final_string = ", " + final_string
 	return final_string
 
 object_tables = {}
@@ -91,17 +94,21 @@ print("""
 # https://punctum-im.github.io/pypunctum/alchemify
 """)
 
+print("from sqlalchemy import Metadata, Column, ForeignKey\nfrom sqlalchemy import Integer, String, Datetime, Boolean, SmallInteger, Text\nfrom sqlalchemy.orm import declarative_base\nBase = declarative_base()\n")
+
 for object in objects.objects:
 	object_type = object.object_type
 	object_table = FauxTable(object.__name__, object_type)
 	object_properties = get_object_properties(object)
 	print("# " + object_type)
 	for key in object.valid_keys:
-		object_table.columns[key] = "Column('" + key + "', " + key_type_to_sql(object.key_types[key]) + ", " + ormify([is_unique(object_properties, key),
+		object_table.columns[key] = "Column('" + key + "', " + key_type_to_sql(object.key_types[key]) + ormify([is_unique(object_properties, key),
 			is_required(object_properties, key),
 			is_id(object_properties, key)]) + ")"
 	object_table.dump_orm()
 	object_tables[object_type] = object_table
+
+print("Base.metadata.create_all(engine)")
 
 print("""
 # End of auto-generated tables
