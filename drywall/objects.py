@@ -7,6 +7,7 @@ Usage: import the file and define an object using one of the classes
 from drywall import db
 from drywall import utils
 
+from datetime import datetime
 import uuid    # for assign_id function
 
 # Common functions
@@ -56,7 +57,7 @@ def __strip_invalid_keys(self, object_dict):
 				pass
 			else:
 				if key in self.unique_keys:
-					unique_key_violations = db.get_object_by_key_value_pair({"object_type": self.object_type, key: value})
+					unique_key_violations = db.get_object_by_key_value_pair(self.object_type, {key: value})
 					if unique_key_violations:
 						unique_check_fail = False
 						for mention in unique_key_violations:
@@ -274,7 +275,7 @@ class Account:
 	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "bot_owner", "friends", "blocklist"]
 	required_keys = ["username", "short_status"]
 	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
-	default_keys = {"short_status": 0}
+	default_keys = {"short_status": 0, "index_user": False, "bot": False}
 	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 	unique_keys = ["username"]
@@ -294,8 +295,8 @@ class Account:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		if "bot" in self.__dict__ and self.__dict__["bot"] == "true" and not self.__dict__["bot_owner"]:
-			raise KeyError('bot_owner')
+		if "bot" in self.__dict__ and self.__dict__["bot"] == True and not self.__dict__["bot_owner"]:
+			raise KeyError('Account is set to "bot", but there is no bot_owner')
 
 class Channel:
 	"""
@@ -345,7 +346,8 @@ class Message:
 	object_type = 'message'
 	valid_keys = ["content", "parent_channel", "author", "post_date", "edit_date", "edited", "attached_files", "reactions", "reply_to", "replies"]
 	required_keys = ["content", "parent_channel", "author", "post_date", "edited"]
-	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "string", "edited": "boolean", "edit_date": "date", "attached_files": "list", "reactions": "list", "reply_to": "id", "replies": "id_list"}
+	key_types = {"content": "string", "parent_channel": "id", "author": "id", "post_date": "datetime", "edited": "boolean", "edit_date": "datetime", "attached_files": "list", "reactions": "list", "reply_to": "id", "replies": "id_list"}
+	default_keys = {"edited": False}
 	id_key_types = {"parent_channel": "channel", "author": "account", "reply_to": "message", "replies": "message"}
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
@@ -364,6 +366,11 @@ class Message:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+		if patch_dict:
+			self.__dict__['edited'] = True
+			self.__dict__['edit_date'] = datetime.utcnow()
+		else:
+			self.__dict__['post_date'] = datetime.utcnow()
 
 class Conference:
 	"""
@@ -373,8 +380,8 @@ class Conference:
 	object_type = 'conference'
 	valid_keys = ["name", "description", "icon", "owner", "index_conference", "permissions", "creation_date", "channels", "users", "roles"]
 	required_keys = ["name", "icon", "owner", "permissions", "creation_date"]
-	default_keys = {"index_conference": "false", "channels": [], "users": [], "roles": [], "permissions": "21101"}
-	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index_conference": "boolean", "permissions": "permission_map", "creation_date": "string", "channels": "id_list", "users": "id_list", "roles": "id_list"}
+	default_keys = {"index_conference": False, "channels": [], "users": [], "roles": [], "permissions": "21101"}
+	key_types = {"name": "string", "description": "string", "icon": "string", "owner": "id", "index_conference": "boolean", "permissions": "permission_map", "creation_date": "datetime", "channels": "id_list", "users": "id_list", "roles": "id_list"}
 	id_key_types = {"owner": "account", "channels": "channel", "users": "account", "roles": "role"}
 	nonrewritable_keys = ["creation_date"]
 
@@ -393,6 +400,7 @@ class Conference:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+		self.__dict__['creation_date'] = datetime.utcnow()
 
 class ConferenceMember:
 	"""
@@ -402,7 +410,7 @@ class ConferenceMember:
 	object_type = 'conference_member'
 	valid_keys = ["user_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
 	required_keys = ["user_id", "permissions", "parent_conference"]
-	default_keys = {"banned": "false", "roles": [], "permissions": "21101"}
+	default_keys = {"banned": False, "roles": [], "permissions": "21101"}
 	key_types = {"user_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
 	id_key_types = {"user_id": "account", "roles": "role", "parent_conference": "conference"}
 	nonrewritable_keys = []
@@ -486,9 +494,9 @@ class Report:
 	"""
 	type = 'object'
 	object_type = 'report'
-	valid_keys = ["target", "note"]
-	required_keys = ["target"]
-	key_types = {"target": "id", "note": "string"}
+	valid_keys = ["target", "note", "submission_date"]
+	required_keys = ["target", "submission_date"]
+	key_types = {"target": "id", "note": "string", "submission_date": "datetime"}
 	id_key_types = {"target": "any"}
 	nonrewritable_keys = ["target"]
 
@@ -507,6 +515,7 @@ class Report:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+		self.__dict__['submission_date'] = datetime.utcnow()
 
 objects = [Instance, Account, Channel, Message, Conference, ConferenceMember, Invite, Role, Report]
 
