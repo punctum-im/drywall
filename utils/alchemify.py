@@ -64,15 +64,23 @@ def is_id(object_properties, key):
 	"""Checks if key contains an ID and returns ORM relationship statement if needed"""
 	if object_properties['key_types'][key] == "id":
 		id_key_type = object_properties['id_key_types'][key]
-		if id_key_type == any:
+		if id_key_type == 'any':
 			return "ForeignKey('objects.id')"
 		else:
 			return "ForeignKey('" + id_key_type + ".id')"
 	return ""
 
+def default_for_bool(object_properties, key):
+	"""Sets default value for booleans; all bools are NULL if the default is not set."""
+	if object_properties['key_types'][key] == "boolean":
+		return "default = " + str(object_properties['default_keys'][key])
+	return ""
+
+
 def ormify(args):
 	"""Turns arguments into a string with settings that can be appended
 	to an ORM Column statement if needed"""
+	args = [i for i in args if i]
 	final_string = ""
 	arg_count = 0
 	args_total = len(args)
@@ -94,7 +102,16 @@ print("""
 # https://punctum-im.github.io/pypunctum/alchemify
 """)
 
-print("from sqlalchemy import Metadata, Column, ForeignKey\nfrom sqlalchemy import Integer, String, Datetime, Boolean, SmallInteger, Text\nfrom sqlalchemy.orm import declarative_base\nBase = declarative_base()\n")
+print("from sqlalchemy import Column, ForeignKey\nfrom sqlalchemy import Integer, String, DateTime, Boolean, SmallInteger, Text\nfrom sqlalchemy.orm import declarative_base\nBase = declarative_base()\n")
+
+print("""
+# Main object lookup table
+class Objects(Base):
+	__tablename__ = 'objects'
+
+	id = Column(String(255), primary_key=True)
+	object_type = Column(String(255), nullable=False)
+""")
 
 for object in objects.objects:
 	object_type = object.object_type
@@ -102,13 +119,32 @@ for object in objects.objects:
 	object_properties = get_object_properties(object)
 	print("# " + object_type)
 	for key in object.valid_keys:
-		object_table.columns[key] = "Column('" + key + "', " + key_type_to_sql(object.key_types[key]) + ormify([is_unique(object_properties, key),
+		object_table.columns[key] = "Column(" + key_type_to_sql(object.key_types[key]) + ormify([is_id(object_properties, key),
 			is_required(object_properties, key),
-			is_id(object_properties, key)]) + ")"
+			is_unique(object_properties, key),
+			default_for_bool(object_properties, key)]) + ")"
 	object_table.dump_orm()
 	object_tables[object_type] = object_table
 
-print("Base.metadata.create_all(engine)")
+print("""
+# Helper functions
+""")
+
+print("""
+def object_type_to_model(object_type):
+	\"""
+	Takes an object_type string and returns the ORM model class for that
+	object type.
+	\"""
+""")
+
+_if = "if"
+for object in objects.objects:
+	print("	" + _if + " object_type == '" + object.object_type + "':")
+	print("		return " + object.__name__)
+	_if = "elif"
+print("	else:")
+print("		raise TypeError('Incorrect object_type')")
 
 print("""
 # End of auto-generated tables
