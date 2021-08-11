@@ -36,7 +36,7 @@ def test_db():
 	object_push = db.push_object(test_object_id, test_object_class)
 	assert db.get_object_as_dict_by_id(test_object_id) == test_object
 
-	pair_get = db.get_object_by_key_value_pair({"object_type": "account", "username": "edittest"})
+	pair_get = db.get_object_by_key_value_pair("account", {"username": "edittest"})
 	assert pair_get[0] == test_object
 
 	db.delete_object(test_object_id)

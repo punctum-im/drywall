@@ -63,7 +63,7 @@ def register_user(username, email, password):
 	Raises a ValueError if the username or email is already taken.
 	"""
 	# Do some basic validation
-	if db.get_object_by_key_value_pair({"object_type": "account", "username": username}):
+	if db.get_object_by_key_value_pair("account", {"username": username}):
 		raise ValueError("Username taken.")
 	if db.get_user_by_email(email):
 		raise ValueError("E-mail already in use.")
