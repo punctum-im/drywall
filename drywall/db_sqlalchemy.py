@@ -3,11 +3,34 @@
 This is the SQLAlchemy backend, intended to replace all existing
 database backends.
 """
-from drywall import db_models as models
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
+from drywall import db_models as models
+from drywall import config
+from drywall import objects
 
-engine = create_engine("sqlite+pysqlite:///:memory:", echo=True, future=True)
+# !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
+# If you came here to change the database type, ***DON'T***.
+# Drywall relies on some Postgres-specific features to function:
+#
+# - datetime support for dates; we could just store them as strings,
+#   but having proper date support is useful for search APIs.
+#
+# - arrays, for ID lists (and lists in general); the only alternatives
+#   for this are storing lists as strings or using pickles, both of
+#   which would basically be asking for RCE vulnerabilities.
+#
+# If you wanted to change the DB to in-memory sqlite for testing: there's
+# no need to! See the test runner script (tests/test_runner.sh) for more
+# information on how to prepare a database for one-time use.
+#
+# If you want to use a different DBAPI, consider checking up with
+# SQLAlchemy devs to see what you could do to add array support to other
+# DBAPIs. If that's not your cup of tea, you can always go against my advice
+# and make arrays use pickles or whatever. Hacking on software is fun,
+# just try not to do it in large-scale production kthx bye.
+# !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
+engine = create_engine("postgresql://%s:%s@localhost/%s" % (config.get('db_user'), config.get('db_password'), config.get('db_name')), echo=True, future=True)
 
 models.Base.metadata.create_all(engine)
 
@@ -99,11 +122,23 @@ def get_object_as_dict_by_id(id):
 			return None
 		object_type = object_type_query.object_type
 		object = session.query(models.object_type_to_model(object_type)).get(id)
-		object_dict = vars(object)
+		object_dict = object.to_dict()
+		# Clean up and fix up the resulting dict
+		object_dict['type'] = 'object'
 		object_dict['object_type'] = object_type
-		object_dict.pop('_sa_instance_state')
 		object_dict_clean = {k: v for k, v in object_dict.items() if v is not None}
-		print("DEBUG: " + str(object_dict_clean))
+		# Turn dates to strings (this is hardcoded to improve performance)
+		# this should be unnecessary with the serializer but i need to test this still
+		"""
+		if object_type == "conference":
+			object_dict_clean['creation_date'] = object_dict_clean['creation_date'].replace(tzinfo=datetime.timezone.utc).isoformat()
+		elif object_type == "message":
+			object_dict_clean['post_date'] = object_dict_clean['post_date'].replace(tzinfo=datetime.timezone.utc).isoformat()
+			if 'edit_date' in object_dict_clean.keys():
+				object_dict_clean['edit_date'] = object_dict_clean['edit_date'].replace(tzinfo=datetime.timezone.utc).isoformat()
+		elif object_type == "report":
+			object_dict_clean['submission_date'] = object_dict_clean['submission_date'].replace(tzinfo=datetime.timezone.utc).isoformat()
+		"""
 		return object_dict_clean
 
 def get_object_by_key_value_pair(object_type, key_value_dict, limit_objects=False):
@@ -121,9 +156,10 @@ def get_object_by_key_value_pair(object_type, key_value_dict, limit_objects=Fals
 	model = models.object_type_to_model(object_type)
 	with Session(engine) as session:
 		for key, value in key_value_dict.items():
-			query = session.query(model).filter(getattr(model, key) == value)
+			query = session.query(model).filter(getattr(model, key) == value).all()
 			if query:
-				matches.append(vars(query))
+				for object in query:
+					matches.append(object.to_dict())
 	if len(matches) != key_count:
 		return query
 	else:
