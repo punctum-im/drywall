@@ -1,6 +1,6 @@
-simplejson
 flask
 email-validator
-psycopg2-binary
+simplejson
 SQLAlchemy
 SQLAlchemy-serializer
+psycopg2-binary
