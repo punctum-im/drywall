@@ -47,9 +47,9 @@ class Account(Base, CustomSerializerMixin):
 	short_status = Column(Integer, nullable=False)
 	status = Column(Text)
 	bio = Column(Text)
-	index_user = Column(Boolean, default = False)
+	index_user = Column(Boolean, default=False)
 	email = Column(Text)
-	bot = Column(Boolean, default = False)
+	bot = Column(Boolean, default=False)
 	bot_owner = Column(String(255), ForeignKey('account.id'))
 	friends = Column(postgresql.ARRAY(String(255)))
 	blocklist = Column(postgresql.ARRAY(String(255)))
@@ -77,7 +77,7 @@ class Message(Base, CustomSerializerMixin):
 	author = Column(String(255), ForeignKey('account.id'), nullable=False)
 	post_date = Column(DateTime, nullable=False)
 	edit_date = Column(DateTime)
-	edited = Column(Boolean, nullable=False, default = False)
+	edited = Column(Boolean, nullable=False, default=False)
 	attached_files = Column(postgresql.ARRAY(String(255)))
 	reactions = Column(postgresql.ARRAY(String(255)))
 	reply_to = Column(String(255), ForeignKey('message.id'))
@@ -92,7 +92,7 @@ class Conference(Base, CustomSerializerMixin):
 	description = Column(Text)
 	icon = Column(Text, nullable=False)
 	owner = Column(String(255), ForeignKey('account.id'), nullable=False)
-	index_conference = Column(Boolean, default = False)
+	index_conference = Column(Boolean, default=False)
 	permissions = Column(SmallInteger, nullable=False)
 	creation_date = Column(DateTime, nullable=False)
 	channels = Column(postgresql.ARRAY(String(255)))
@@ -109,7 +109,7 @@ class ConferenceMember(Base, CustomSerializerMixin):
 	parent_conference = Column(String(255), ForeignKey('conference.id'), nullable=False)
 	roles = Column(postgresql.ARRAY(String(255)))
 	permissions = Column(SmallInteger, nullable=False)
-	banned = Column(Boolean, default = False)
+	banned = Column(Boolean, default=False)
 
 # invite
 class Invite(Base, CustomSerializerMixin):

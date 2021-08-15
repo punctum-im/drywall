@@ -78,9 +78,7 @@ def set_defaults(object_properties, key):
 	"""
 	key_type = object_properties['key_types'][key]
 	if key_type == "boolean":
-		return "default = " + str(object_properties['default_keys'][key])
-	#elif key_type == "datetime":
-	#	return "default=datetime.datetime.utcnow()"
+		return "default=" + str(object_properties['default_keys'][key])
 	return ""
 
 
