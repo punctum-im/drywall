@@ -429,8 +429,9 @@ def create_stash(id_list):
 	stash['type'] = "stash"
 	stash['id_list'] = id_list
 	for id in id_list:
-		if db.id_taken(id):
-			stash[id] = db.get_object_as_dict_by_id(id)
+		object_dict = db.get_object_as_dict_by_id(id)
+		if object_dict:
+			stash[id] = object_dict
 		else:
 			raise KeyError('ID does not exist: ' + id)
 
