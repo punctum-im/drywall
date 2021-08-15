@@ -51,11 +51,7 @@ def __strip_invalid_keys(self, object_dict):
 					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 
 			# Validate unique keys
-			try:
-				self.unique_keys
-			except AttributeError:
-				pass
-			else:
+			if self.unique_keys:
 				if key in self.unique_keys:
 					unique_key_violations = db.get_object_by_key_value_pair(self.object_type, {key: value})
 					if unique_key_violations:
@@ -71,7 +67,7 @@ def __strip_invalid_keys(self, object_dict):
 
 	return final_dict
 
-def init_object(self, object_dict, force_id=False, patch_dict=False):
+def init_object(self, object_dict, force_id=False, patch_dict=False, federated=False):
 	"""
 	Common initialization function shared by all objects. Returns a dict.
 	For use in the __init__ function in classes.
@@ -101,11 +97,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	if patch_dict:
 		current_object = db.get_object_as_dict_by_id(object_dict['id'])
 		# Check for non-rewritable keys
-		try:
-			self.nonrewritable_keys
-		except AttributeError:
-			pass
-		else:
+		if self.nonrewritable_keys:
 			try:
 				utils.any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
@@ -118,11 +110,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False):
 	final_dict = {**clean_object_dict, **init_dict}
 
 	# Add default keys if needed
-	try:
-		self.default_keys
-	except:
-		pass
-	else:
+	if self.default_keys:
 		for key, value in self.default_keys.items():
 			if key not in final_dict:
 				final_dict[key] = value
@@ -143,25 +131,9 @@ def get_object_class_by_type(object_type):
 	Takes an object type and returns the applicable object.
 	Returns None if there is no object with the given type.
 	"""
-	if object_type == 'instance':
-		return Instance
-	elif object_type == "account":
-		return Account
-	elif object_type == "channel":
-		return Channel
-	elif object_type == "message":
-		return Message
-	elif object_type == "conference":
-		return Conference
-	elif object_type == "conference_member":
-		return ConferenceMember
-	elif object_type == "invite":
-		return Invite
-	elif object_type == "role":
-		return Role
-	elif object_type == "report":
-		return Report
-	else:
+	try:
+		return class_to_object[object_type]
+	except KeyError:
 		return None
 
 def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_id_in_extend=False):
@@ -239,19 +211,23 @@ class Permissions:
 # Objects begin here #
 ######################
 
-class Instance:
-	"""
-	Contains information about an instance.
-	"""
+class Object:
+	"""Core functions for objects."""
 	type = 'object'
-	object_type = 'instance'
-	valid_keys = ["address", "server_software", "name", "description"]
-	required_keys = ["address", "server_software", "name"]
-	key_types = {"address": "string", "server_software": "string", "name": "string", "description": "string"}
-	nonrewritable_keys = ["address"]
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
+	# !!! vvv Set these in your object
+	object_type = None
+	valid_keys = []
+	key_types = {} # key name: key type; see docs for key types
+	# !!! ^^^ Set these in your object
+	required_keys = []
+	id_key_types = {}
+	default_keys = []
+	nonrewritable_keys = []
+	unique_keys = []
+
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
 		"""
-		Initializes an Instance object.
+		Initializes an object.
 
 		Optional arguments:
 		  - force_id (default: False) - takes False or an ID, if an ID is given
@@ -262,10 +238,22 @@ class Instance:
 		                                  that will be replaced in the object.
 		                                  (You should probably also set force_id
 		                                  if you use this.)
+		  - federated (default: False) - TBD
 		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 
-class Account:
+class Instance(Object):
+	"""
+	Contains information about an instance.
+	"""
+	type = 'object'
+	object_type = 'instance'
+	valid_keys = ["address", "server_software", "name", "description"]
+	required_keys = ["address", "server_software", "name"]
+	key_types = {"address": "string", "server_software": "string", "name": "string", "description": "string"}
+	nonrewritable_keys = ["address"]
+
+class Account(Object):
 	"""
 	Contains information about an account.
 	"""
@@ -279,25 +267,13 @@ class Account:
 	nonrewritable_keys = ["username"]
 	unique_keys = ["username"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes an Account object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		if "bot" in self.__dict__ and self.__dict__["bot"] == True and not self.__dict__["bot_owner"]:
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
+		if "bot" in self.__dict__ and self.__dict__["bot"] and not self.__dict__["bot_owner"]:
 			raise KeyError('Account is set to "bot", but there is no bot_owner')
 
-class Channel:
+class Channel(Object):
 	"""
 	Contains information about a channel.
 	"""
@@ -310,21 +286,9 @@ class Channel:
 	id_key_types = {"parent_conference": "conference", "members": "conference_member"}
 	nonrewritable_keys = ["channel_type", "parent_conference"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a Channel object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		__channel_type = self.__dict__['channel_type']
 		if __channel_type == 'text' or __channel_type == 'media':
 			if 'parent_conference' not in self.__dict__:
@@ -337,7 +301,7 @@ class Channel:
 		else:
 			raise KeyError('invalid channel type ' + __channel_type)
 
-class Message:
+class Message(Object):
 	"""
 	Contains information about a message.
 	"""
@@ -350,21 +314,9 @@ class Message:
 	id_key_types = {"parent_channel": "channel", "author": "account", "reply_to": "message", "replies": "message"}
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a Message object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		if patch_dict:
 			self.__dict__['edited'] = True
 			self.__dict__['edit_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
@@ -373,7 +325,7 @@ class Message:
 			if 'edit_date' in self.__dict__.keys() and not self.__dict__['edited']:
 				self.__dict__.pop('edit_date')
 
-class Conference:
+class Conference(Object):
 	"""
 	Contains information about a conference.
 	"""
@@ -386,24 +338,12 @@ class Conference:
 	id_key_types = {"owner": "account", "channels": "channel", "users": "account", "roles": "role"}
 	nonrewritable_keys = ["creation_date"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a Conference object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		self.__dict__['creation_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
-class ConferenceMember:
+class ConferenceMember(Object):
 	"""
 	Contains information about a conference member.
 	"""
@@ -416,23 +356,7 @@ class ConferenceMember:
 	id_key_types = {"user_id": "account", "roles": "role", "parent_conference": "conference"}
 	nonrewritable_keys = []
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a ConferenceMember object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-
-class Invite:
+class Invite(Object):
 	"""
 	Contains information about an invite.
 	"""
@@ -445,23 +369,7 @@ class Invite:
 	nonrewritable_keys = ["conference_id", "creator"]
 	unique_keys = ["name"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes an Invite object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-
-class Role:
+class Role(Object):
 	"""
 	Contains information about a role.
 	"""
@@ -473,23 +381,7 @@ class Role:
 	id_key_types = {"parent_conference": "conference"}
 	default_keys = {"color": "100, 100, 100", "permissions": "21101"}
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a Role object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-
-class Report:
+class Report(Object):
 	"""
 	Contains information about a report.
 	"""
@@ -501,24 +393,25 @@ class Report:
 	id_key_types = {"target": "any"}
 	nonrewritable_keys = ["target"]
 
-	def __init__(self, object_dict, force_id=False, patch_dict=False):
-		"""
-		Initializes a Report object.
-
-		Optional arguments:
-		  - force_id (default: False) - takes False or an ID, if an ID is given
-		                                sets the object id to the specified ID,
-		                                otherwise the ID is generated with the
-		                                assign_id() function
-		  - patch_dict (default: False) - takes False or a dictionary with keys
-		                                  that will be replaced in the object.
-		                                  (You should probably also set force_id
-		                                  if you use this.)
-		"""
-		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		self.__dict__['submission_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
-objects = [Instance, Account, Channel, Message, Conference, ConferenceMember, Invite, Role, Report]
+class_to_object = {
+	'instance': Instance,
+	'account': Account,
+	'conference': Conference,
+	'conference_member': ConferenceMember,
+	'channel': Channel,
+	'message': Message,
+	'invite': Invite,
+	'role': Role,
+	'report': Report
+}
+
+object_types = class_to_object.keys()
+objects = class_to_object.values()
 
 def create_stash(id_list):
 	"""
