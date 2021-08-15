@@ -187,7 +187,7 @@ def add_user(user_dict):
 def update_user(user_email, user_dict):
 	"""Edits a user in the database."""
 	with Session(engine) as session:
-		object = session.query(models.User).get(email)
+		object = session.query(models.User).get(user_email)
 		if user_email != user_dict['email']:
 			if get_user_by_email(user_email):
 				raise ValueError("E-mail is taken")
