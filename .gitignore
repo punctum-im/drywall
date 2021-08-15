@@ -11,6 +11,7 @@ instance/
 .pytest_cache/
 .coverage
 htmlcov/
+coverage.xml
 
 dist/
 build/
