@@ -11,6 +11,9 @@ from drywall import objects
 from uuid import uuid4
 from datetime import datetime
 
+class GeneratedObjects:
+	"""Stores generated objects for later tests."""
+
 def generate_objects():
 	"""
 	This function generates objects of all types and returns a list
@@ -19,7 +22,8 @@ def generate_objects():
 	"""
 	created_objects = {}
 	created_ids = {}
-	for object in ['instance', 'account', 'conference', 'conference_member', 'invite', 'role', 'channel', 'message', 'report']:
+	created_db_objects = {}
+	for object in objects.object_types:
 		# Reset the created_dict and set our object class. The latter is used to
 		# get values like required keys, key types, etc. to know how to fill
 		# an object dict.
@@ -78,11 +82,8 @@ def generate_objects():
 		# objects). However, this also breaks unique keys, so we need to edit
 		# them to avoid conflicts when generated objects are used in later tests.
 		db.add_object(object_generated_from_dict)
-		try:
-			object_class.unique_keys
-		except:
-			pass
-		else:
+		created_db_objects[object] = vars(object_generated_from_dict)
+		if object_class.unique_keys:
 			old_dict = object_generated_from_dict.__dict__
 			patch_dict = old_dict.copy()
 			for key in object_class.unique_keys:
@@ -91,12 +92,115 @@ def generate_objects():
 			if old_dict == patch_dict:
 				raise Exception
 			patch_from_dict = objects.make_object_from_dict(patch_dict, extend=old_dict['id'])
+			created_db_objects[object] = vars(patch_from_dict)
+			assert created_db_objects[object]['id'] == old_dict['id']
 			db.push_object(old_dict['id'], patch_from_dict)
+			assert db.get_object_as_dict_by_id(old_dict['id']) == vars(patch_from_dict)
 		created_ids[object] = object_generated_from_dict.__dict__["id"]
+		assert created_ids[object] == created_db_objects[object]['id']
+	return [created_objects, created_ids, created_db_objects]
 
-	return [created_objects, created_ids]
+def test_validate_objects():
+	"""Check for some common object errors"""
+	for object in objects.objects:
+		for key in object.valid_keys:
+			# Check if key has key type set
+			assert key in object.key_types.keys()
+			key_type = object.key_types[key]
+			# Check if key type is correct
+			assert key_type in ['string', 'number', 'id', 'id_list', 'list', 'datetime', 'boolean', 'permission_map']
+			# If the key is an ID key, check if the ID key type is provided
+			if key_type == 'id':
+				assert key in object.id_key_types.keys()
+		# Check for nonexistent keys (keys not in valid_keys) in:
+		key_lists = []
+		# - key types
+		key_lists.append(object.key_types.keys())
+		# - ID key types
+		key_lists.append(object.id_key_types.keys())
+		# - required keys
+		key_lists.append(object.required_keys)
+		# - nonrewritable keys
+		key_lists.append(object.nonrewritable_keys)
+		# - default keys
+		key_lists.append(object.default_keys)
+		# - unique keys
+		key_lists.append(object.unique_keys)
+		# ...
+		for list in key_lists:
+			for key in list:
+				assert key in object.valid_keys
 
 def test_generate_objects():
-	"""For pytest: run the above function"""
-	assert generate_objects()
+	"""Try to generate objects"""
+	generate = generate_objects()
+	assert generate
+	GeneratedObjects.objects = generate[0]
+	GeneratedObjects.ids = generate[1]
+	GeneratedObjects.objects_in_db = generate[2]
 
+def test_object_init_failcases():
+	"""Object initialization fail cases"""
+	# Try invalid ID in ID key field
+	test_report = GeneratedObjects.objects['report'].copy()
+	test_report['target'] = 'fakeid'
+	try:
+		objects.Report(test_report)
+	except TypeError:
+		pass
+	else:
+		raise Exception("Fake ID test failed!")
+
+	# Try wrong ID key type in ID key field
+	test_message = GeneratedObjects.objects['message'].copy()
+	test_message['author'] = GeneratedObjects.ids['invite']
+	try:
+		objects.Message(test_message)
+	except TypeError:
+		pass
+	else:
+		raise Exception("Wrong ID type test failed!")
+
+	# Try to fail unique key constraint
+	try:
+		objects.Account(GeneratedObjects.objects_in_db['account'].copy())
+	except TypeError:
+		pass
+	else:
+		raise Exception("Unique key constraint test failed!")
+
+	# Try to fail nonrewritable key check
+	try:
+		objects.Message(GeneratedObjects.objects['message'].copy(),
+			force_id=GeneratedObjects.ids['message'],
+			patch_dict={"post_date": "0"})
+	except ValueError:
+		pass
+	else:
+		raise Exception("Nonrewritable key test failed!")
+
+def test_stashes():
+	"""Tests stash creation"""
+	# Create a stash
+	stash_id_list = [GeneratedObjects.ids['account'], GeneratedObjects.ids['message']]
+	stash = objects.create_stash(stash_id_list)
+	assert stash == {"type": "stash", "id_list": stash_id_list,
+		GeneratedObjects.ids['account']: GeneratedObjects.objects_in_db['account'],
+		GeneratedObjects.ids['message']: GeneratedObjects.objects['message']}
+	# Make a stash with a missing ID
+	stash_id_list.append("fakeid")
+	try:
+		objects.create_stash(stash_id_list)
+	except KeyError:
+		pass
+	else:
+		raise Exception("Stash created despite having missing ID in its list")
+	# Stuff the ID list with object IDs; we don't check for validity this early,
+	# so it's fine
+	stash_id_list = ['fakeid'] * 101
+	try:
+		objects.create_stash(stash_id_list)
+	except ValueError:
+		pass
+	else:
+		raise Exception("Stash created despite too many IDs being provided")
