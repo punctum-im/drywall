@@ -1,0 +1,4 @@
+#!/bin/sh
+alchemifydir=$(dirname $0)
+$alchemifydir/alchemify.py > db_models.py
+mv db_models.py drywall/db_models.py

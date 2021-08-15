@@ -28,6 +28,7 @@ def test_db():
 	object_add = db.add_object(test_object_class)
 	assert db.get_object_as_dict_by_id(test_object_id) != None
 	assert db.get_object_as_dict_by_id(test_object_id) == test_object
+	assert db.get_object_as_dict_by_id('fakeid') == None
 
 	assert db.add_object(test_object_class) == False
 
@@ -37,7 +38,11 @@ def test_db():
 	assert db.get_object_as_dict_by_id(test_object_id) == test_object
 
 	pair_get = db.get_object_by_key_value_pair("account", {"username": "edittest"})
+	assert pair_get
 	assert pair_get[0] == test_object
+
+	pair_failed_get = db.get_object_by_key_value_pair("account", {"username": "fakeusername"})
+	assert not pair_failed_get
 
 	db.delete_object(test_object_id)
 	assert db.id_taken(test_object_id) == False

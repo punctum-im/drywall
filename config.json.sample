@@ -2,6 +2,8 @@
 	"instance_domain": "your.domain",
 	"instance_name": "Your instance name",
 	"instance_description": "An instance running Drywall.",
-	"db_backend": "The database backend.",
+	"db_name": "PostgreSQL database name",
+	"db_user": "PostgreSQL user name",
+	"db_password": "PostgreSQL user password",
 	"secret": "A random string, used as a password hash."
 }
