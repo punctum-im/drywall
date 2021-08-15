@@ -38,12 +38,6 @@ for arg in $*; do
 	esac
 done
 
-if [ $enable_coverage ]; then
-	_pytest=coverage run -a --source=drywall -m pytest
-else
-	_pytest=pytest
-fi
-
 if [ $mode = 'all' ]; then
 	do_test=true
 	do_lint=true
@@ -92,7 +86,11 @@ if [ $do_test ]; then
 	fi
 
 	set +e
-	PYTHON_PATH=drywall $_pytest -vvv || echo -e "\n\033[31mTests failed.\033[0m\n"
+	if [ $enable_coverage ]; then
+		coverage run -a --source=drywall -m pytest -vvv || echo -e "\n\033[31mTests failed.\033[0m\n"
+	else
+		pytest -vvv || echo -e "\n\033[31mTests failed.\033[0m\n"
+	fi
 	set -e
 
 	if [ $enable_coverage ]; then
