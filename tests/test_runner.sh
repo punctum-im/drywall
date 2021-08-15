@@ -104,7 +104,8 @@ if [ $do_test ]; then
 
 	if [ ! $no_db_setup ]; then
 		if [ $keep_db ]; then
-			echo -e '\033[33m!!! Keeping test database. !!!\033[0m'
+			echo -e '\033[33m!!! Keeping test database.\033[0m'
+			echo -e '\033[33m!!! Note that it will be wiped on next test run!\033[0m'
 		else
 			sudo -Hu postgres psql <<- EOF
 			DROP DATABASE IF EXISTS drywall_testdb;
