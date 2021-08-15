@@ -7,7 +7,7 @@ Usage: import the file and define an object using one of the classes
 from drywall import db
 from drywall import utils
 
-from datetime import datetime
+import datetime
 import uuid    # for assign_id function
 
 # Common functions
@@ -249,7 +249,6 @@ class Instance:
 	required_keys = ["address", "server_software", "name"]
 	key_types = {"address": "string", "server_software": "string", "name": "string", "description": "string"}
 	nonrewritable_keys = ["address"]
-
 	def __init__(self, object_dict, force_id=False, patch_dict=False):
 		"""
 		Initializes an Instance object.
@@ -368,9 +367,11 @@ class Message:
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
 		if patch_dict:
 			self.__dict__['edited'] = True
-			self.__dict__['edit_date'] = datetime.utcnow()
+			self.__dict__['edit_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 		else:
-			self.__dict__['post_date'] = datetime.utcnow()
+			self.__dict__['post_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+			if 'edit_date' in self.__dict__.keys() and not self.__dict__['edited']:
+				self.__dict__.pop('edit_date')
 
 class Conference:
 	"""
@@ -400,7 +401,7 @@ class Conference:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		self.__dict__['creation_date'] = datetime.utcnow()
+		self.__dict__['creation_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
 class ConferenceMember:
 	"""
@@ -515,7 +516,7 @@ class Report:
 		                                  if you use this.)
 		"""
 		self.__dict__ = init_object(self, object_dict, force_id=force_id, patch_dict=patch_dict)
-		self.__dict__['submission_date'] = datetime.utcnow()
+		self.__dict__['submission_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
 objects = [Instance, Account, Channel, Message, Conference, ConferenceMember, Invite, Role, Report]
 

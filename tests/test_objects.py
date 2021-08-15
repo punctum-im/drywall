@@ -46,7 +46,7 @@ def generate_objects():
 			elif key_type == "boolean":
 				created_dict[key] = False
 			elif key_type == "permission_map":
-				created_dict[key] = "11111"
+				created_dict[key] = 64
 			elif key_type == "id":
 				id_key_type = object_class.id_key_types[key]
 				if id_key_type == "any":
@@ -65,7 +65,6 @@ def generate_objects():
 				# Datetime keys are automatically rewritten upon object creation,
 				# so this is ignored.
 				created_dict[key] = datetime.utcnow()
-				print(datetime.now())
 			else:
 				raise TypeError("Invalid key type")
 
