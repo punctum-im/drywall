@@ -9,6 +9,7 @@ from drywall import utils
 
 import datetime
 import uuid    # for assign_id function
+import warnings
 
 # Common functions
 default_nonrewritable_keys = ["id", "type", "object_type"]
@@ -80,6 +81,9 @@ def init_object(self, object_dict, force_id=False, patch_dict=False, federated=F
 	"""
 	init_dict = {}
 
+	if patch_dict and not force_id:
+		force_id=object_dict['id']
+
 	# This is done like this to avoid breakage when the ID = 0.
 	if str(force_id) == "False":
 		init_dict['id'] = assign_id()
@@ -95,13 +99,13 @@ def init_object(self, object_dict, force_id=False, patch_dict=False, federated=F
 
 	if patch_dict:
 		current_object = db.get_object_as_dict_by_id(object_dict['id'])
-		patch_dict['id'] = object_dict['id']
 		# Check for non-rewritable keys
 		if self.nonrewritable_keys:
 			try:
 				utils.any_key_from_list_in_dict(default_nonrewritable_keys + self.nonrewritable_keys, patch_dict)
 			except KeyError as e:
-				if str(e) in current_object and not patch_dict[str(e)] == current_object[str(e)]:
+				found_key = e.args[0]
+				if found_key in current_object and patch_dict[found_key] != current_object[found_key]:
 					raise ValueError(e)
 		final_patch_dict = __strip_invalid_keys(self, patch_dict)
 
