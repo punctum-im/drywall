@@ -85,13 +85,18 @@ if [ $do_test ]; then
 		coverage erase
 	fi
 
+	fail=''
 	set +e
 	if [ $enable_coverage ]; then
-		coverage run -a --source=drywall -m pytest -vvv || echo -e "\n\033[31mTests failed.\033[0m\n"
+		coverage run -a --source=drywall -m pytest -vvv || fail=true
 	else
-		pytest -vvv || echo -e "\n\033[31mTests failed.\033[0m\n"
+		pytest -vvv || fail=true
 	fi
 	set -e
+
+	if [ $fail ]; then
+		echo -e "\n\033[31mTests failed.\033[0m\n"
+	fi
 
 	if [ $enable_coverage ]; then
 		coverage xml
@@ -111,7 +116,10 @@ if [ $do_test ]; then
 	if [ $copy_back_config ]; then
 		mv config.json.orig config.json
 	fi
-	exit 1
+
+	if [ $fail ]; then
+		exit 1
+	fi
 fi
 
 set +e
