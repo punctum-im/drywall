@@ -58,7 +58,6 @@ def __strip_invalid_keys(self, object_dict):
 						unique_check_fail = False
 						for mention in unique_key_violations:
 							if mention['id'] != object_dict['id']:
-								print("Expected " + mention['id'] + ", got " + self.id)
 								unique_check_fail = True
 						if unique_check_fail:
 							raise TypeError("The value in the '" + key + "' key is already taken.")
@@ -96,6 +95,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False, federated=F
 
 	if patch_dict:
 		current_object = db.get_object_as_dict_by_id(object_dict['id'])
+		patch_dict['id'] = object_dict['id']
 		# Check for non-rewritable keys
 		if self.nonrewritable_keys:
 			try:
