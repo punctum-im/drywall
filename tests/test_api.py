@@ -10,6 +10,7 @@ import pytest
 
 import drywall
 import drywall.api
+import drywall.objects
 from test_objects import generate_objects
 
 @pytest.fixture
@@ -135,11 +136,25 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 		raise e
 
 	if method == "GET" and object_type:
-		assert action_result_json == object_types[-1]
+		if action_result_json['object_type'] in PostedObjectDicts.items.keys():
+			assert action_result_json == PostedObjectDicts.items[action_result_json['object_type']]
+		else:
+			assert action_result_json == object_types[-1]
 	if method == "POST" and data and not ignore_data and "id" in data:
+		date_keys = []
+		object_class = drywall.objects.get_object_class_by_type(data['object_type'])
+		if 'datetime' in object_class.key_types.values():
+			for key, value in object_class.key_types.items():
+				if value == 'datetime':
+					date_keys.append(key)
 		assert action_result_json['id'] != data['id']
 		safe_data = data.copy()
 		safe_data['id'] = action_result_json.get('id')
+		if date_keys:
+			for key in date_keys:
+				if key in safe_data:
+					assert action_result_json[key] != data[key]
+					safe_data[key] = action_result_json[key]
 		assert action_result_json == safe_data
 		PostedObjectDicts.items[action_result_json['object_type']] = action_result_json
 	if method == "PATCH":

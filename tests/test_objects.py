@@ -9,6 +9,7 @@ purposes).
 from drywall import db
 from drywall import objects
 from uuid import uuid4
+from datetime import datetime
 
 def generate_objects():
 	"""
@@ -43,9 +44,9 @@ def generate_objects():
 			elif key_type == "number":
 				created_dict[key] = 1
 			elif key_type == "boolean":
-				created_dict[key] = "false"
+				created_dict[key] = False
 			elif key_type == "permission_map":
-				created_dict[key] = "11111"
+				created_dict[key] = 64
 			elif key_type == "id":
 				id_key_type = object_class.id_key_types[key]
 				if id_key_type == "any":
@@ -60,6 +61,10 @@ def generate_objects():
 				# with the same IDs too). Currently this is not the case however,
 				# so we can ignore it for now.
 				created_dict[key] = [created_ids[object_class.id_key_types[key]]]
+			elif key_type == "datetime":
+				# Datetime keys are automatically rewritten upon object creation,
+				# so this is ignored.
+				created_dict[key] = datetime.utcnow()
 			else:
 				raise TypeError("Invalid key type")
 

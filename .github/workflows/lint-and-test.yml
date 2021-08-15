@@ -7,6 +7,31 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres:latest
+        # Provide the password for postgres
+        env:
+          # optional (defaults to `postgres`)
+          POSTGRES_DB: drywall_testdb
+          # required
+          POSTGRES_PASSWORD: drywall_test
+          # optional (defaults to `5432`)
+          POSTGRES_PORT: 5432
+          # optional (defaults to `postgres`)
+          POSTGRES_USER: drywall_test
+        ports:
+        - 5432:5432
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
@@ -19,7 +44,6 @@ jobs:
         pip install flake8 flake8-tabs pytest coverage
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install .
-        cp tests/test_config.json config.json
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -27,4 +51,4 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261,C901,E501
     - name: Run tests
-      run: tests/.gh_run.sh
+      run: tests/test_runner.sh test --enable-coverage --no-db-setup

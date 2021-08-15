@@ -1,6 +1,0 @@
-{
-	"instance_domain": "test.domain",
-	"instance_name": "A test instance",
-	"instance_description": "An instance running Drywall.",
-	"db_backend": "dummy"
-}
