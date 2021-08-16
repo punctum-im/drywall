@@ -50,9 +50,36 @@ class Account(Base, CustomSerializerMixin):
 	index_user = Column(Boolean, default=False)
 	email = Column(Text)
 	bot = Column(Boolean, default=False)
-	bot_owner = Column(String(255), ForeignKey('account.id'))
 	friends = Column(postgresql.ARRAY(String(255)))
 	blocklist = Column(postgresql.ARRAY(String(255)))
+
+# conference
+class Conference(Base, CustomSerializerMixin):
+	__tablename__ = 'conference'
+
+	id = Column('id', String(255), primary_key=True)
+	name = Column(Text, nullable=False)
+	description = Column(Text)
+	icon = Column(Text, nullable=False)
+	owner = Column(String(255), ForeignKey('account.id'), nullable=False)
+	index_conference = Column(Boolean, default=False)
+	permissions = Column(SmallInteger, nullable=False)
+	creation_date = Column(DateTime, nullable=False)
+	channels = Column(postgresql.ARRAY(String(255)))
+	users = Column(postgresql.ARRAY(String(255)))
+	roles = Column(postgresql.ARRAY(String(255)))
+
+# conference_member
+class ConferenceMember(Base, CustomSerializerMixin):
+	__tablename__ = 'conference_member'
+
+	id = Column('id', String(255), primary_key=True)
+	user_id = Column(String(255), ForeignKey('account.id'), nullable=False)
+	nickname = Column(Text)
+	parent_conference = Column(String(255), ForeignKey('conference.id'), nullable=False)
+	roles = Column(postgresql.ARRAY(String(255)))
+	permissions = Column(SmallInteger, nullable=False)
+	banned = Column(Boolean, default=False)
 
 # channel
 class Channel(Base, CustomSerializerMixin):
@@ -83,40 +110,12 @@ class Message(Base, CustomSerializerMixin):
 	reply_to = Column(String(255), ForeignKey('message.id'))
 	replies = Column(postgresql.ARRAY(String(255)))
 
-# conference
-class Conference(Base, CustomSerializerMixin):
-	__tablename__ = 'conference'
-
-	id = Column('id', String(255), primary_key=True)
-	name = Column(Text, nullable=False)
-	description = Column(Text)
-	icon = Column(Text, nullable=False)
-	owner = Column(String(255), ForeignKey('account.id'), nullable=False)
-	index_conference = Column(Boolean, default=False)
-	permissions = Column(SmallInteger, nullable=False)
-	creation_date = Column(DateTime, nullable=False)
-	channels = Column(postgresql.ARRAY(String(255)))
-	users = Column(postgresql.ARRAY(String(255)))
-	roles = Column(postgresql.ARRAY(String(255)))
-
-# conference_member
-class ConferenceMember(Base, CustomSerializerMixin):
-	__tablename__ = 'conference_member'
-
-	id = Column('id', String(255), primary_key=True)
-	user_id = Column(String(255), ForeignKey('account.id'), nullable=False)
-	nickname = Column(Text)
-	parent_conference = Column(String(255), ForeignKey('conference.id'), nullable=False)
-	roles = Column(postgresql.ARRAY(String(255)))
-	permissions = Column(SmallInteger, nullable=False)
-	banned = Column(Boolean, default=False)
-
 # invite
 class Invite(Base, CustomSerializerMixin):
 	__tablename__ = 'invite'
 
 	id = Column('id', String(255), primary_key=True)
-	name = Column(Text, nullable=False, unique=True)
+	code = Column(Text, nullable=False, unique=True)
 	conference_id = Column(String(255), ForeignKey('conference.id'), nullable=False)
 	creator = Column(String(255), ForeignKey('account.id'), nullable=False)
 
@@ -161,14 +160,14 @@ def object_type_to_model(object_type):
 		return Instance
 	elif object_type == 'account':
 		return Account
-	elif object_type == 'channel':
-		return Channel
-	elif object_type == 'message':
-		return Message
 	elif object_type == 'conference':
 		return Conference
 	elif object_type == 'conference_member':
 		return ConferenceMember
+	elif object_type == 'channel':
+		return Channel
+	elif object_type == 'message':
+		return Message
 	elif object_type == 'invite':
 		return Invite
 	elif object_type == 'role':

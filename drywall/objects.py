@@ -360,12 +360,12 @@ class Invite(Object):
 	"""
 	type = 'object'
 	object_type = 'invite'
-	valid_keys = ["name", "conference_id", "creator"]
-	required_keys = ["name", "conference_id", "creator"]
-	key_types = {"name": "string", "conference_id": "id", "creator": "id"}
+	valid_keys = ["code", "conference_id", "creator"]
+	required_keys = ["code", "conference_id", "creator"]
+	key_types = {"code": "string", "conference_id": "id", "creator": "id"}
 	id_key_types = {"conference_id": "conference", "creator": "account"}
 	nonrewritable_keys = ["conference_id", "creator"]
-	unique_keys = ["name"]
+	unique_keys = ["code"]
 
 class Role(Object):
 	"""

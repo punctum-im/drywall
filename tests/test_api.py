@@ -280,7 +280,7 @@ def test_api_conferences(client):
 	endpoint_test(client, 'GET', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
 	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
 	endpoint_test(client, 'PATCH', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
-	              data={"name": "new_name"},
+	              data={"code": "new_code"},
 	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
 	endpoint_test(client, 'DELETE', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
 	              object_type={"<conference_id>": "conference", "<invite_id>": "invite"})
@@ -318,7 +318,7 @@ def test_api_invites(client):
 	endpoint_test(client, 'POST', '/api/v1/invites', PregeneratedObjects.dicts['invite'],
 	              object_type={None: "invite"})
 	endpoint_test(client, 'GET', '/api/v1/invites/<invite_id>', object_type={"<invite_id>": "invite"})
-	endpoint_test(client, 'PATCH', '/api/v1/invites/<invite_id>', data={"name": "new_name"},
+	endpoint_test(client, 'PATCH', '/api/v1/invites/<invite_id>', data={"code": "new_code"},
 	              object_type={"<invite_id>": "invite"})
 	endpoint_test(client, 'DELETE', '/api/v1/invites/<invite_id>', object_type={"<invite_id>": "invite"})
 
