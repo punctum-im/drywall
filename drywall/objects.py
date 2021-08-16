@@ -263,19 +263,13 @@ class Account(Object):
 	"""
 	type = 'object'
 	object_type = 'account'
-	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "bot_owner", "friends", "blocklist"]
+	valid_keys = ["username", "short_status", "status", "bio", "index_user", "email", "bot", "friends", "blocklist"]
 	required_keys = ["username", "short_status"]
-	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "bot_owner": "id", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
+	key_types = {"username": "string", "short_status": "number", "status": "string", "bio": "string", "email": "string", "bot": "boolean", "index_user": "boolean", "friends": "id_list", "blocklist": "id_list"}
 	default_keys = {"short_status": 0, "index_user": False, "bot": False}
-	id_key_types = {"bot_owner": "account", "friends": "account", "blocklist": "account"}
+	id_key_types = {"friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 	unique_keys = ["username"]
-
-	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
-		__doc__ = Object.__doc__
-		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
-		if "bot" in self.__dict__ and self.__dict__["bot"] and not self.__dict__["bot_owner"]:
-			raise KeyError('Account is set to "bot", but there is no bot_owner')
 
 class Channel(Object):
 	"""
