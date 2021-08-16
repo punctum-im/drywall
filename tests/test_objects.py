@@ -179,6 +179,114 @@ def test_object_init_failcases():
 	else:
 		raise Exception("Nonrewritable key test failed!")
 
+	# Try to fail required key test
+	test_message.pop('author')
+	try:
+		objects.Message(test_message)
+	except KeyError:
+		pass
+	else:
+		raise Exception("Required key test failed!")
+
+	# Try to init object without providing force_id
+	# (this is not recommended, but we provide a workaround, so test it)
+	test_role = GeneratedObjects.objects['role'].copy()
+	objects.Role(test_role, patch_dict={"name": "test"})
+	test_role.pop('id')
+	try:
+		objects.Role(test_role, patch_dict={"name": "test"})
+	except KeyError:
+		pass
+	else:
+		raise Exception("Patch dict with no force_id test failed!")
+
+def test_object_specific_failcases():
+	"""Test some object-specific constraints"""
+	# Channel: try to create a channel without a parent conference
+	channel_dict = GeneratedObjects.objects['channel'].copy()
+	channel_dict.pop('parent_conference')
+	try:
+		objects.Channel(channel_dict)
+	except KeyError:
+		pass
+	else:
+		raise Exception("Text channel without parent conference test failed!")
+
+	# Channel: try to create a channel without members/icon (direct_message)
+	channel_dict['channel_type'] = 'direct_message'
+	try:
+		objects.Channel(channel_dict)
+	except KeyError:
+		pass
+	else:
+		raise Exception("DM channel without members variable test failed!")
+	channel_dict['members'] = []
+	try:
+		objects.Channel(channel_dict)
+	except KeyError:
+		pass
+	else:
+		raise Exception("DM channel without icon variable test failed!")
+
+	# Channel: try fake channel type
+	channel_dict['channel_type'] = 'faketype'
+	try:
+		objects.Channel(channel_dict)
+	except KeyError:
+		pass
+	else:
+		raise Exception("Fake channel type test failed!")
+
+
+	# Message: try to create a message with an edit_date
+	message_dict = GeneratedObjects.objects['message'].copy()
+	message_dict['edit_date'] = datetime.now()
+	message_object = objects.Message(message_dict)
+	if 'edit_date' in vars(message_object):
+		raise Exception("Edit date removal test failed!")
+
+def test_make_object_dict():
+	"""make_object_from_dict() fail cases"""
+	# Try to make an object from a correct dict
+	test_message = GeneratedObjects.objects['message'].copy()
+	objects.make_object_from_dict(test_message)
+
+	# Try to extend nonexistent objects
+	try:
+		objects.make_object_from_dict(test_message, extend='fakeid')
+	except NameError:
+		pass
+	else:
+		raise Exception("Nonexistent object in extend test failed!")
+
+	# Try to make object with fake object type
+	try:
+		objects.make_object_from_dict({"object_type": "fakeobject"})
+	except TypeError:
+		pass
+	else:
+		raise Exception("Fake object type test failed!")
+
+	# Try to fail object creation step
+	test_message['author'] = GeneratedObjects.ids['invite']
+	try:
+		objects.make_object_from_dict(test_message)
+	except (KeyError, ValueError, TypeError):
+		pass
+	else:
+		raise Exception("Object creation step fail test failed!")
+
+def test_permissions():
+	"""Tests permissions"""
+	objects.Permissions().validate(0)
+	objects.Permissions().validate(8191)
+	try:
+		objects.Permissions().validate(9000)
+	except ValueError:
+		pass
+	else:
+		raise Exception("Permission validation test failed!")
+
 def test_stashes():
 	"""Tests stash creation"""
 	# Create a stash
