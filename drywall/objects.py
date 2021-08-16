@@ -188,6 +188,25 @@ def make_object_from_dict(passed_object_dict, extend=False, ignore_nonexistent_i
 
 class Permissions:
 	"""Contains information about permissions."""
+	# Permission shorthands
+	shorthands = {
+		'see_channel': 1,
+		'read_channel': 2,
+		'write_channel': 4,
+		'embed': 8,
+		'moderate_messages': 16,
+		'create_invite': 32,
+		'modify_channel': 64,
+		'change_nickname': 128,
+		'moderate_nicknames': 256,
+		'kick': 512,
+		'ban': 1024,
+		'edit_roles': 2048,
+		'edit_conference': 4096
+	}
+	shorthands_numerical = {v: k for k, v in shorthands.items()}
+
+	# Scopes to permission numbers
 	scopes = {
 		"conference:read": 1,   # See channel
 		"conference:moderate": 4096, # Modify conference
@@ -195,7 +214,7 @@ class Permissions:
 		"channel:write": 4,     # Send messages to/speak in channel
 		"channel:moderate": 64, # Modify channel information
 		"message:read": 2,      # Alias for channel:read
-		"message:write": 8,     # Edit and delete own messages
+		"message:embed": 8,     # Upload/add attachments
 		"message:moderate": 16, # Pin messages, delete other users' messages
 		"invite:create": 32,    # Create and modify invites
 		"conference_member:write_nick": 128, # Change own nickname
@@ -204,12 +223,34 @@ class Permissions:
 		"conference_member:ban": 1024, # Ban users
 		"role:moderate": 2048, # Modify and assign roles
 	}
-	def validate(self, value):
-		"""Validates whether the permission value is correct or not."""
-		if value <= 8191:
-			return value
-		else:
-			raise ValueError
+
+	def __init__(self, value=0):
+		"""Initializes a permission map."""
+		validate_permissions(value)
+		self.value = value
+
+	def validate(self):
+		validate_permissions(self.value)
+
+	def break_down_to_values(self):
+		"""Turns permission value in map to a list with seperate values"""
+		return utils.powers_to_list(self.value)
+
+	def value_to_shorthands(self):
+		"""Turns permission value in map to shorthands"""
+		num_list = self.break_down_to_values()
+		str_list = []
+		for key in num_list:
+			str_list.append(self.shorthands_numerical[key])
+		return str_list
+
+def validate_permissions(value):
+	"""Validates whether the permission value is correct or not."""
+	if value <= 8191 and value >= 0 and isinstance(value, int):
+		return value
+	else:
+		raise ValueError
+
 
 ######################
 # Objects begin here #

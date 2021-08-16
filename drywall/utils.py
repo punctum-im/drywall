@@ -58,3 +58,19 @@ def replace_values_in_dict_by_value(replace_values, target_dict):
 			if str(dict_val) == val:
 				ret_dict[key] = replacement
 	return ret_dict
+
+def powers_to_list(x):
+	"""
+	Takes a value that's a sum of powers of 2 and breaks it down to a list
+	of powers of 2.
+
+	(Shamelessly stolen from https://stackoverflow.com/a/30227161.)
+	"""
+	powers = []
+	i = 1
+	while i <= x:
+		if i & x:
+			powers.append(i)
+		i <<= 1
+	return powers
+

@@ -278,14 +278,20 @@ def test_make_object_dict():
 
 def test_permissions():
 	"""Tests permissions"""
-	objects.Permissions().validate(0)
-	objects.Permissions().validate(8191)
+	# Try to create some Permissions objects
+	objects.Permissions(0)
+	full_perms = objects.Permissions(8191)
 	try:
-		objects.Permissions().validate(9000)
+		objects.Permissions(9000)
+		objects.Permissions(-1)
 	except ValueError:
 		pass
 	else:
 		raise Exception("Permission validation test failed!")
+	# Try to run individual functions
+	full_perms.validate()
+	assert full_perms.break_down_to_values() == list(full_perms.shorthands.values())
+	assert full_perms.value_to_shorthands() == list(full_perms.shorthands.keys())
 
 def test_stashes():
 	"""Tests stash creation"""
