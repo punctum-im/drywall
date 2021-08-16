@@ -51,7 +51,7 @@ if [ $do_lint ]; then
 	flake8 . --count --select=E9,F63,F7,F82,F821 --show-source --statistics --use-flake8-tabs
 	echo -e "\033[33m[lint]\033[0m No errors found. Linting as per usual..."
 	# exit-zero treats all errors as warnings.
-	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261,C901,E501,ET127,ET128
+	flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --use-flake8-tabs --ignore=E302,E261,C901,E501,ET127,ET128,E722
 fi
 
 if [ $do_test ]; then

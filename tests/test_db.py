@@ -6,9 +6,6 @@ This file contains tests for all database backends.
 from drywall import objects
 from drywall import db
 from test_objects import generate_objects
-from shutil import copy, move
-from os import remove
-import simplejson as json
 
 class PregeneratedObjects:
     """Contains pregenerated objects and their IDs."""
@@ -23,18 +20,18 @@ def test_db():
 	test_object['id'] = test_object_class.__dict__['id']
 	test_object_id = test_object['id']
 
-	assert db.id_taken("fakeid") == False
+	assert not db.id_taken("fakeid")
 
-	object_add = db.add_object(test_object_class)
-	assert db.get_object_as_dict_by_id(test_object_id) != None
+	db.add_object(test_object_class)
+	assert db.get_object_as_dict_by_id(test_object_id)
 	assert db.get_object_as_dict_by_id(test_object_id) == test_object
-	assert db.get_object_as_dict_by_id('fakeid') == None
+	assert not db.get_object_as_dict_by_id('fakeid')
 
-	assert db.add_object(test_object_class) == False
+	assert not db.add_object(test_object_class)
 
 	test_object['username'] = "edittest"
 	test_object_class = objects.make_object_from_dict(test_object, extend=test_object_id)
-	object_push = db.push_object(test_object_id, test_object_class)
+	db.push_object(test_object_id, test_object_class)
 	assert db.get_object_as_dict_by_id(test_object_id) == test_object
 
 	pair_get = db.get_object_by_key_value_pair("account", {"username": "edittest"})
@@ -45,7 +42,7 @@ def test_db():
 	assert not pair_failed_get
 
 	db.delete_object(test_object_id)
-	assert db.id_taken(test_object_id) == False
+	assert not db.id_taken(test_object_id)
 
 	test_user = {"username": "test", "email": "mail@example.com", "password": "password", "account_id": PregeneratedObjects.dicts['account']['id']}
 	db.add_user(test_user)

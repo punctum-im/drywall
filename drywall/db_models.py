@@ -178,4 +178,3 @@ def object_type_to_model(object_type):
 		raise TypeError('Incorrect object_type')
 
 # End of auto-generated tables
-

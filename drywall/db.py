@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from drywall import db_models as models
 from drywall import config
-from drywall import objects
 
 # !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
 # If you came here to change the database type, ***DON'T***.
@@ -67,6 +66,7 @@ def add_object(object):
 		session.add(new_generic_object)
 		session.commit()
 
+	return object_dict
 
 def push_object(id, object):
 	"""
@@ -86,6 +86,8 @@ def push_object(id, object):
 		for key, value in object_dict.items():
 			setattr(new_object, key, value)
 		session.commit()
+
+	return object_dict
 
 def delete_object(id):
 	"""
@@ -145,7 +147,6 @@ def get_object_by_key_value_pair(object_type, key_value_dict, limit_objects=Fals
 	                                     search to the given amount of
 	                                     objects.
 	"""
-	key_count = len(key_value_dict.keys())
 	matches = []
 	model = models.object_type_to_model(object_type)
 	with Session(engine) as session:

@@ -3,7 +3,6 @@
 This file contains definitions of all the API paths and is meant to be ran as a
 Flask app.
 """
-import simplejson as json
 from drywall import config
 
 from flask import Flask

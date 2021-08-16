@@ -50,7 +50,7 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 	tests)
 	"""
 	# Set value for use_post_values
-	if use_post_values == None:
+	if not use_post_values:
 		if method == "POST":
 			use_post_values = False
 		else:
@@ -85,7 +85,6 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 			data['parent_conference'] = PostedObjectDicts.items['conference']['id']
 		elif list(object_type.values())[-1] == "invite":
 			data['conference_id'] = PostedObjectDicts.items['conference']['id']
-
 
 	# Go over object types and fill in the placeholders in the endpoint
 	# The object_type variable is a dict containing pairs of placeholder strings
@@ -125,7 +124,6 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 
 	# Test the results
 	action_result_json = action_result.get_json()
-	#print(action_result_json)
 	try:
 		assert action_result.status == response_code
 	except AssertionError as e:
@@ -164,7 +162,6 @@ def endpoint_test(client, method, endpoint, data=None, object_type=None,
 			for key in data.keys():
 				assert action_result_json[key] == data[key]
 	if method == "DELETE":
-		#PostedObjectDicts.items = {}
 		assert client.get('/api/v1/id/' + action_result_json['id']).status == "404 NOT FOUND"
 	if data and not ignore_data:
 		action_no_data = action(endpoint)

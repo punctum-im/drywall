@@ -3,10 +3,10 @@
 Contains endpoints for the backend's default pages, such as the about
 pages. Authentication pages are defined in the auth module.
 """
-from drywall import db
 from drywall import app
 from drywall import auth
 from drywall import config
+from drywall import db
 from drywall import objects
 from drywall import utils
 
@@ -75,7 +75,7 @@ def settings_page():
 @app.route('/settings/account', methods=["GET", "POST"])
 def settings_account():
 	"""Account settings."""
-	if not "user_id" in session:
+	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	if request.method == "POST":
 		session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
@@ -120,7 +120,7 @@ def settings_account():
 	                       settings_subpage=False,
 	                       settings_category="account")
 
-scopebox_scopes = {"account-read": "account:read",
+scopebox_scopes = {"account-read": "account:read", # noqa: E305
     "account-write": "account:write",
     "conference-read": "conference:read",
     "conference-moderate": "conference:moderate",
@@ -154,7 +154,7 @@ def web_scopebox_to_scopes(form_dict, cleanup_form_dict=False):
 @app.route('/settings/clients', methods=["GET", "POST"])
 def settings_clients():
 	"""OAuth client settings."""
-	if not "user_id" in session:
+	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	instance = db.get_object_as_dict_by_id("0")
 	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
@@ -175,7 +175,7 @@ def settings_clients():
 @app.route('/settings/clients/new', methods=["GET", "POST"])
 def settings_clients_new():
 	"""New app creation."""
-	if not "user_id" in session:
+	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	instance = db.get_object_as_dict_by_id("0")
 	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
@@ -190,7 +190,7 @@ def settings_clients_new():
 		client_dict = client_dict_info[1]
 		client_dict["scopes"] = client_dict_info[0]
 		client_dict["owner"] = session["user_id"]
-		client_dict_final = auth.create_client(client_dict)
+		auth.create_client(client_dict)
 		return redirect(url_for('settings_clients'))
 	return render_template("settings/clients_new.html",
 	                       user_dict=user_dict,
@@ -205,16 +205,16 @@ def settings_clients_new():
 @app.route('/settings/clients/<client_id>', methods=["GET", "POST"])
 def settings_clients_edit(client_id):
 	"""App editing."""
-	if not "user_id" in session:
+	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	if client_id == "":
 		return redirect(url_for('settings_clients'))
 	user_dict = session['user_dict']
 	user_apps = db.get_clients_for_user(user_dict['id'], 'owner')
 	app_dict = None
-	for app in user_apps:
-		if app["client_id"] == client_id:
-			app_dict = app
+	for oauth_app in user_apps:
+		if oauth_app["client_id"] == client_id:
+			app_dict = oauth_app
 			break
 	if not app_dict:
 		return render_template("settings/clients_404.html"), 404
@@ -252,16 +252,16 @@ def settings_clients_edit(client_id):
 @app.route('/settings/clients/<client_id>/remove', methods=["GET", "POST"])
 def settings_clients_edit_remove(client_id):
 	"""App removal (not to be confused with revoking)."""
-	if not "user_id" in session:
+	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	if client_id == "":
 		return redirect(url_for('settings_clients'))
 	user_dict = session['user_dict']
 	user_apps = db.get_clients_for_user(user_dict['id'], 'owner')
 	app_dict = None
-	for app in user_apps:
-		if app["client_id"] == client_id:
-			app_dict = app
+	for oauth_app in user_apps:
+		if oauth_app["client_id"] == client_id:
+			app_dict = oauth_app
 			break
 	if not app_dict:
 		return render_template("settings/clients_404.html"), 404

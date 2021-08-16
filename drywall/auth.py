@@ -6,9 +6,7 @@ from drywall import app
 from drywall import db
 from drywall import objects
 from drywall import utils
-from drywall import web
 
-import hashlib
 from flask import render_template, flash, request, redirect, session, url_for
 from email_validator import validate_email, EmailNotValidError
 from uuid import uuid4 # For client IDs
@@ -32,8 +30,8 @@ def create_client(client_dict):
 	client_dict['client_id'] = str(uuid4())
 	client_dict['client_secret'] = token_hex(16)
 	if client_dict['type'] == "bot":
-		account_proto_dict = { "type": "object", "object_type": "account",
-		                 "username": client_dict["name"] }
+		account_proto_dict = {"type": "object", "object_type": "account",
+		                 "username": client_dict["name"]}
 		account_object = objects.Account(account_proto_dict)
 		account_dict = db.add_object(account_object)
 		client_dict['account_id'] = account_dict['id']
@@ -68,14 +66,14 @@ def register_user(username, email, password):
 	if db.get_user_by_email(email):
 		raise ValueError("E-mail already in use.")
 	# Create an Account object for the user
-	account_object = { "type": "object", "object_type": "account",
-	                   "username": username, "icon": "stub", "email": email }
+	account_object = {"type": "object", "object_type": "account",
+	                   "username": username, "icon": "stub", "email": email}
 	account_object_valid = objects.make_object_from_dict(account_object)
 	added_object = db.add_object(account_object_valid)
 	account_id = added_object['id']
 	# Add the user to the user database
-	user_dict = { "username": username, "account_id": account_id, "email": email,
-	              "password": generate_password_hash(password) }
+	user_dict = {"username": username, "account_id": account_id, "email": email,
+	              "password": generate_password_hash(password)}
 	db.add_user(user_dict)
 
 @app.route('/auth/sign_up', methods=["GET", "POST"])

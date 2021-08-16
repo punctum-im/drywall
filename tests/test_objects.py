@@ -237,7 +237,6 @@ def test_object_specific_failcases():
 	else:
 		raise Exception("Fake channel type test failed!")
 
-
 	# Message: try to create a message with an edit_date
 	message_dict = GeneratedObjects.objects['message'].copy()
 	message_dict['edit_date'] = datetime.now()

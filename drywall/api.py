@@ -7,12 +7,10 @@ from drywall import objects
 from drywall import pings
 from drywall import app
 from drywall import config
-from drywall import auth
-
-import sys
+from drywall import auth # noqa: F401
 
 import simplejson as json
-from flask import Flask, Response, request
+from flask import Response, request
 
 VERSION = "0.1"
 
@@ -36,7 +34,7 @@ def api_get(object_id, object_type=None):
 	Gets an object by ID and returns the required object.
 	"""
 	object = db.get_object_as_dict_by_id(object_id)
-	if object == None:
+	if not object:
 		return pings.response_from_error(4)
 	if object_type and not object['object_type'] == object_type:
 		return pings.response_from_error(5)
@@ -142,7 +140,7 @@ def api_get_patch_delete_conference_child(conference_id, object_type, object_id)
 	else:
 		conference_id_key = "parent_conference"
 	if object_get[conference_id_key] != conference_id:
-		error_message="The given " + object_type + " does not belong to the given conference"
+		error_message = "The given " + object_type + " does not belong to the given conference"
 		return pings.response_from_error(8, error_message=error_message)
 	if request.method == "GET":
 		return object_get
@@ -167,7 +165,7 @@ def api_report_conference_child(conference_id, report_dict, object_id, object_ty
 	"""
 	try:
 		object_get = api_get(object_id, object_type=object_type)
-		object_get_id = object_get['id']
+		object_get['id']
 	except:
 		return object_get
 	if object_type == "invite":
@@ -175,12 +173,12 @@ def api_report_conference_child(conference_id, report_dict, object_id, object_ty
 	else:
 		conference_id_key = "parent_conference"
 	if object_get[conference_id_key] != conference_id:
-		error_message="The given " + object_type + " does not belong to the given conference"
+		error_message = "The given " + object_type + " does not belong to the given conference"
 		return pings.response_from_error(8, error_message=error_message)
 	return api_report(report_dict, object_id, object_type)
 
 ##
-## API methods
+# API methods
 ##
 
 # Objects, IDs and our instance
@@ -226,7 +224,7 @@ def api_stash_request():
 
 	try:
 		stash = objects.create_stash(id_list)
-	except ValueError as e:
+	except ValueError:
 		return pings.response_from_error(11)
 	except KeyError as e:
 		return pings.response_from_error(9, error_message=str(e))

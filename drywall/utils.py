@@ -43,7 +43,7 @@ def fill_dict_with_dummy_values(fill_values, target_dict, dummy=False):
 	"""
 	ret_dict = target_dict.copy()
 	for val in fill_values:
-		if not val in ret_dict:
+		if val not in ret_dict:
 			ret_dict[val] = dummy
 	return ret_dict
 
@@ -73,4 +73,3 @@ def powers_to_list(x):
 			powers.append(i)
 		i <<= 1
 	return powers
-

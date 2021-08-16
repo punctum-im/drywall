@@ -9,7 +9,6 @@ from drywall import utils
 
 import datetime
 import uuid    # for assign_id function
-import warnings
 
 # Common functions
 default_nonrewritable_keys = ["id", "type", "object_type"]
@@ -82,7 +81,7 @@ def init_object(self, object_dict, force_id=False, patch_dict=False, federated=F
 	init_dict = {}
 
 	if patch_dict and not force_id:
-		force_id=object_dict['id']
+		force_id = object_dict['id']
 
 	# This is done like this to avoid breakage when the ID = 0.
 	if str(force_id) == "False":
@@ -326,7 +325,7 @@ class Channel(Object):
 	nonrewritable_keys = ["channel_type", "parent_conference"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
-		__doc__ = Object.__doc__
+		__doc__ = Object.__doc__ # noqa: F841
 		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		__channel_type = self.__dict__['channel_type']
 		if __channel_type == 'text' or __channel_type == 'media':
@@ -354,7 +353,7 @@ class Message(Object):
 	nonrewritable_keys = ["parent_channel", "author", "post_date", "edit_date", "edited"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
-		__doc__ = Object.__doc__
+		__doc__ = Object.__doc__ # noqa: F841
 		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		if patch_dict:
 			self.__dict__['edited'] = True
@@ -378,7 +377,7 @@ class Conference(Object):
 	nonrewritable_keys = ["creation_date"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
-		__doc__ = Object.__doc__
+		__doc__ = Object.__doc__ # noqa: F841
 		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		self.__dict__['creation_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
@@ -433,9 +432,10 @@ class Report(Object):
 	nonrewritable_keys = ["target"]
 
 	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
-		__doc__ = Object.__doc__
+		__doc__ = Object.__doc__ # noqa: F841
 		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
 		self.__dict__['submission_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+
 
 class_to_object = {
 	'instance': Instance,
