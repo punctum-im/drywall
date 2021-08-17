@@ -28,6 +28,14 @@ def assign_id():
 	id = uuid.uuid4()
 	return str(id)
 
+def __validate_id_key(self, key, value):
+	"""Shorthand function to validate ID keys."""
+	test_object = db.get_object_as_dict_by_id(value)
+	if not test_object:
+		raise TypeError("No object with the ID given in the key '" + key + "' was found. (" + value + ")")
+	elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
+		raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
+
 def __strip_invalid_keys(self, object_dict):
 	"""
 	Takes an object dict, removes all invalid values and performs a few
@@ -44,11 +52,10 @@ def __strip_invalid_keys(self, object_dict):
 		if key in self.valid_keys:
 			# Validate ID keys
 			if self.key_types[key] == 'id':
-				test_object = db.get_object_as_dict_by_id(value)
-				if not test_object:
-					raise TypeError("No object with the ID given in the key '" + key + "' was found.")
-				elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
-					raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
+				__validate_id_key(self, key, value)
+			elif self.key_types[key] == 'id_list':
+				for id_value in value:
+					__validate_id_key(self, key, id_value)
 
 			# Validate unique keys
 			if self.unique_keys:
@@ -437,15 +444,18 @@ class Report(Object):
 		self.__dict__['submission_date'] = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
 
 
+# Class to object type mapping
+# These are ordered this way to avoid issues with missing dependencies
+# in case they're created in order (like in the case of tests)
 class_to_object = {
 	'instance': Instance,
 	'account': Account,
 	'conference': Conference,
+	'role': Role,
 	'conference_member': ConferenceMember,
 	'channel': Channel,
 	'message': Message,
 	'invite': Invite,
-	'role': Role,
 	'report': Report
 }
 

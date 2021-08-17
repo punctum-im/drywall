@@ -30,8 +30,14 @@ def generate_objects():
 		created_dict = {"object_type": object}
 		object_class = objects.get_object_class_by_type(object)
 
+		# To ensure id lists are tested, add "roles" for conference members to
+		# required keys:
+		class_specific_keys = []
+		if object == 'conference_member':
+			class_specific_keys.append('roles')
+
 		# First, we go over all the required keys for the given object:
-		for key in object_class.required_keys:
+		for key in object_class.required_keys + class_specific_keys:
 			key_type = object_class.key_types[key]
 			# Depending on the key type, we're going to set them differently.
 			if key_type == "string":
