@@ -139,15 +139,6 @@ class Report(Base, CustomSerializerMixin):
 	note = Column(Text)
 	submission_date = Column(DateTime, nullable=False)
 
-# User
-class User(Base, SerializerMixin):
-	__tablename__ = "users"
-
-	account_id = Column(String(255), nullable=False, unique=True)
-	email = Column(String(255), primary_key=True)
-	username = Column(String(255), nullable=False, unique=True)
-	password = Column(Text, nullable=False)
-
 # Helper functions
 
 def object_type_to_model(object_type):

@@ -1,6 +1,8 @@
-flask
+authlib
 email-validator
+flask
+flask-login
+psycopg2-binary
 simplejson
 SQLAlchemy
 SQLAlchemy-serializer
-psycopg2-binary
