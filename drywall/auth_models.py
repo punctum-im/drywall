@@ -6,17 +6,18 @@ from drywall import db_models
 
 from authlib.common.encoding import json_loads, json_dumps
 from authlib.oauth2.rfc6749 import ClientMixin, TokenMixin, AuthorizationCodeMixin
-from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
+#from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
 from datetime import time
 from flask_login import UserMixin
-from sqlalchemy import Column, ForeignKey, relationship
-from sqlalchemy import Integer, String, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 class User(db_models.Base, UserMixin):
 	"""
 	Contains information about a registered user.
 	Not to be confused with Account objects.
 	"""
+	__tablename__ = 'users'
 	id = Column(Integer, primary_key=True) # Integer, to differentiate from account IDs
 	account_id = Column(String(255), ForeignKey('account.id'), nullable=False)
 	account = relationship(db_models.Account)
@@ -29,13 +30,14 @@ class User(db_models.Base, UserMixin):
 
 class Client(db_models.Base, ClientMixin):
 	"""Authlib-compatible Client model"""
+	__tablename__ = 'clients'
 	client_id = Column(String(48), index=True, primary_key=True) # in uuid4 format
 	client_secret = Column(String(120))
 	client_id_issued_at = Column(Integer, nullable=False, default=0)
 	client_secret_expires_at = Column(Integer, nullable=False, default=0)
 	_client_metadata = Column('client_metadata', Text)
 
-	owner_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
+	owner_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 	owner = relationship('User')
 
 	def get_client_id(self):
@@ -124,9 +126,9 @@ class Client(db_models.Base, ClientMixin):
 
 class Token(db_models.Base, TokenMixin):
 	"""Authlib-compatible Token model"""
+	__tablename__ = 'tokens'
 	id = Column(String(255), primary_key=True) # In uuid4 format
 	user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
-	user = relationship('User')
 
 	client_id = Column(String(48))
 	token_type = Column(String(40))
@@ -165,8 +167,9 @@ class Token(db_models.Base, TokenMixin):
 		return True
 
 # FIXME: This should ideally be stored in a cache like Redis. Caching is
-#        veeeery far on our TODO list though, so we've got time.
+#		veeeery far on our TODO list though, so we've got time.
 class AuthorizationCode(db_models.Base, AuthorizationCodeMixin):
+	__tablename__ = 'authcodes'
 	id = Column(Integer, primary_key=True)
 
 	code = Column(String(120), unique=True, nullable=False)
@@ -181,7 +184,6 @@ class AuthorizationCode(db_models.Base, AuthorizationCodeMixin):
 	)
 
 	user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
-	user = relationship('User')
 
 	code_challenge = Column(Text)
 	code_challenge_method = Column(String(48))
@@ -200,3 +202,23 @@ class AuthorizationCode(db_models.Base, AuthorizationCodeMixin):
 
 	def get_nonce(self):
 		return self.nonce
+
+# FIXME: temporary until 1.0 is released
+from authlib.common.encoding import to_unicode
+
+def list_to_scope(scope):
+	"""Convert a list of scopes to a space separated string."""
+	if isinstance(scope, (set, tuple, list)):
+		return " ".join([to_unicode(s) for s in scope])
+	if scope is None:
+		return scope
+	return to_unicode(scope)
+
+
+def scope_to_list(scope):
+	"""Convert a space separated string to a list of scopes."""
+	if isinstance(scope, (tuple, list, set)):
+		return [to_unicode(s) for s in scope]
+	elif scope is None:
+		return None
+	return scope.strip().split()
