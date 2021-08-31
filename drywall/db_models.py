@@ -2,14 +2,13 @@
 # drywall utilities. For more information, see the documentation:
 # https://punctum-im.github.io/drywall/dev/alchemify
 
+from drywall.db import Base
+
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import Integer, String, DateTime, Boolean, SmallInteger, Text
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.dialects import postgresql
 from sqlalchemy_serializer import SerializerMixin
 import datetime
-
-Base = declarative_base()
 
 class CustomSerializerMixin(SerializerMixin):
 	# TODO: Ideally we'd just set datetime_format to None to set it to isoformat,

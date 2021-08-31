@@ -4,7 +4,7 @@ This is the SQLAlchemy backend, intended to replace all existing
 database backends.
 """
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, declarative_base
 from drywall import db_models as models
 from drywall import config
 
@@ -26,6 +26,8 @@ from drywall import config
 # information on how to prepare a database for one-time use.
 # !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
 engine = create_engine("postgresql://%s:%s@localhost/%s" % (config.get('db_user'), config.get('db_password'), config.get('db_name')), future=True)
+
+Base = declarative_base()
 
 models.Base.metadata.create_all(engine)
 
