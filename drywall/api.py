@@ -9,7 +9,6 @@ from drywall import app
 from drywall import config
 from drywall import auth # noqa: F401
 from drywall import web  # noqa: F401
-from drywall.auth import require_oauth
 
 import simplejson as json
 from flask import Response, request

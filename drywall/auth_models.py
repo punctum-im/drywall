@@ -3,6 +3,7 @@
 Contains SQLAlchemy models for authentication.
 """
 from drywall import db_models
+from drywall.db_models import Base
 
 from authlib.common.encoding import json_loads, json_dumps
 from authlib.oauth2.rfc6749 import ClientMixin, TokenMixin, AuthorizationCodeMixin
@@ -12,7 +13,7 @@ from flask_login import UserMixin
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-class User(db_models.Base, UserMixin):
+class User(Base):
 	"""
 	Contains information about a registered user.
 	Not to be confused with Account objects.
@@ -28,7 +29,7 @@ class User(db_models.Base, UserMixin):
 	def get_user_id(self):
 		return self.id
 
-class Client(db_models.Base, ClientMixin):
+class Client(Base, ClientMixin):
 	"""Authlib-compatible Client model"""
 	__tablename__ = 'clients'
 	client_id = Column(String(48), index=True, primary_key=True) # in uuid4 format
@@ -124,11 +125,11 @@ class Client(db_models.Base, ClientMixin):
 	def scope(self):
 		return self.client_metadata.get('scope', '')
 
-class Token(db_models.Base, TokenMixin):
+class Token(Base, TokenMixin):
 	"""Authlib-compatible Token model"""
 	__tablename__ = 'tokens'
 	id = Column(String(255), primary_key=True) # In uuid4 format
-	user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
+	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 
 	client_id = Column(String(48))
 	token_type = Column(String(40))
@@ -168,7 +169,7 @@ class Token(db_models.Base, TokenMixin):
 
 # FIXME: This should ideally be stored in a cache like Redis. Caching is
 #		veeeery far on our TODO list though, so we've got time.
-class AuthorizationCode(db_models.Base, AuthorizationCodeMixin):
+class AuthorizationCode(Base, AuthorizationCodeMixin):
 	__tablename__ = 'authcodes'
 	id = Column(Integer, primary_key=True)
 
@@ -183,7 +184,7 @@ class AuthorizationCode(db_models.Base, AuthorizationCodeMixin):
 		default=lambda: int(time.time())
 	)
 
-	user_id = Column(Integer, ForeignKey('user.id', ondelete='CASCADE'))
+	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 
 	code_challenge = Column(Text)
 	code_challenge_method = Column(String(48))

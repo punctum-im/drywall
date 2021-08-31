@@ -78,9 +78,9 @@ def settings_account():
 	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	if request.method == "POST":
-		session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
+		session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
 		request_form = dict(request.form)
-		account_dict = db.get_object_as_dict_by_id(session['user_id']).copy()
+		account_dict = db.get_object_as_dict_by_id(session['user_account_id']).copy()
 		user_dict = db.get_user_by_email(account_dict['email']).copy()
 		username = request_form['username']
 		try:
@@ -99,15 +99,15 @@ def settings_account():
 			account_dict['email'] = email
 			user_dict['email'] = email
 		try:
-			db.push_object(session['user_id'], objects.make_object_from_dict(account_dict, extend=session['user_id']))
+			db.push_object(session['user_account_id'], objects.make_object_from_dict(account_dict, extend=session['user_account_id']))
 			db.update_user(old_email, user_dict)
 		except (KeyError, ValueError, TypeError) as e:
 			flash(str(e))
-		session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
+		session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
 		return redirect(url_for('settings_account'))
 	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
-	if not db.get_object_as_dict_by_id(session["user_id"]):
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
+	if not db.get_object_as_dict_by_id(session["user_account_id"]):
 		return redirect(url_for('auth_logout'))
 	user_dict = session['user_dict']
 	return render_template("settings/account.html",
@@ -157,8 +157,8 @@ def settings_clients():
 	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
-	if not db.get_object_as_dict_by_id(session["user_id"]):
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
+	if not db.get_object_as_dict_by_id(session["user_account_id"]):
 		return redirect(url_for('auth_logout'))
 	user_dict = session['user_dict']
 	return render_template("settings/clients.html",
@@ -178,8 +178,8 @@ def settings_clients_new():
 	if "user_id" not in session:
 		return redirect(url_for('auth_login'))
 	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
-	if not db.get_object_as_dict_by_id(session["user_id"]):
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
+	if not db.get_object_as_dict_by_id(session["user_account_id"]):
 		return redirect(url_for('auth_logout'))
 	user_dict = session['user_dict']
 	if len(db.get_clients_for_user(user_dict['id'], 'owner')) >= 25:
@@ -189,7 +189,7 @@ def settings_clients_new():
 		client_dict_info = web_scopebox_to_scopes(dict(request.form), cleanup_form_dict=True)
 		client_dict = client_dict_info[1]
 		client_dict["scopes"] = client_dict_info[0]
-		client_dict["owner"] = session["user_id"]
+		client_dict["owner"] = session["user_account_id"]
 		auth.create_client(client_dict)
 		return redirect(url_for('settings_clients'))
 	return render_template("settings/clients_new.html",
@@ -234,8 +234,8 @@ def settings_clients_edit(client_id):
 		auth.edit_client(app_dict["client_id"], client_dict)
 		return redirect('/settings/clients')
 	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
-	if not db.get_object_as_dict_by_id(session["user_id"]):
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
+	if not db.get_object_as_dict_by_id(session["user_account_id"]):
 		return redirect(url_for('auth_logout'))
 	return render_template("settings/clients_edit.html",
 	                       user_dict=user_dict,
@@ -270,8 +270,8 @@ def settings_clients_edit_remove(client_id):
 		flash("Removed " + app_dict["name"] + ".")
 		return redirect('/settings/clients')
 	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["user_id"])
-	if not db.get_object_as_dict_by_id(session["user_id"]):
+	session["user_dict"] = db.get_object_as_dict_by_id(session["user_account_id"])
+	if not db.get_object_as_dict_by_id(session["user_account_id"]):
 		return redirect(url_for('auth_logout'))
 	return render_template("settings/clients_remove.html",
 	                       user_dict=user_dict,

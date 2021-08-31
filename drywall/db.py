@@ -6,6 +6,7 @@ database backends.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from drywall import db_models as models
+from drywall import auth_models
 from drywall import config
 
 # !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
@@ -159,51 +160,6 @@ def get_object_by_key_value_pair(object_type, key_value_dict, limit_objects=Fals
 		return matches
 	else:
 		return None
-
-# Users
-
-def get_user_by_email(email):
-	"""
-	Returns an user's username on the server by email. If not found, returns
-	None.
-	"""
-	user_dict = None
-	with Session(engine) as session:
-		query = session.query(models.User).get(email)
-		if query:
-			user_dict = query.to_dict()
-	return user_dict
-
-def add_user(user_dict):
-	"""Adds a new user to the database."""
-	with Session(engine) as session:
-		new_user = models.User()
-		for key in ['account_id', 'username', 'email', 'password']:
-			setattr(new_user, key, user_dict[key])
-		session.add(new_user)
-		session.commit()
-		new_user_dict = new_user.to_dict()
-	return new_user_dict
-
-def update_user(user_email, user_dict):
-	"""Edits a user in the database."""
-	with Session(engine) as session:
-		object = session.query(models.User).get(user_email)
-		if user_email != user_dict['email']:
-			if get_user_by_email(user_email):
-				raise ValueError("E-mail is taken")
-		for key in ['account_id', 'username', 'email', 'password']:
-			setattr(object, key, user_dict[key])
-		session.commit()
-		new_user_dict = object.to_dict()
-	return new_user_dict
-
-def remove_user(email):
-	"""Removes a user from the database."""
-	# This will be implemented once we can figure out all the related
-	# side-effects, like removing/adding stubs to orphaned objects or
-	# removing the user's Account object.
-	raise Exception('stub')
 
 # Clients
 

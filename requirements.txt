@@ -1,8 +1,7 @@
 authlib
 email-validator
 flask
-flask-login
 psycopg2-binary
 simplejson
-SQLAlchemy
+SQLAlchemy>=1.4.0
 SQLAlchemy-serializer
