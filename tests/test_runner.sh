@@ -18,11 +18,21 @@ no_db_setup=""
 keep_db=""
 copy_back_config=""
 
+print_help() {
+	echo "Usage: test_runner.sh [test/lint] <options>"
+	echo "       To run both linting and tests, leave empty"
+	echo ""
+	echo "Options:"
+	echo "  --no-db-setup      don't perform DB setup operations"
+	echo "  --keep-test-db     keep the test db created during test"
+	echo "  --enable-coverage  enable codecov generation"
+	echo "  --help             prints this help info"
+}
+
 set_mode() {
 	if [ $mode != all ]; then
 		echo "Multiple modes have been provided!" >&2
-		echo "Usage: test_runner.sh [test/lint]"
-		echo "       To run both linting and tests, leave empty"
+		print_help
 		exit 1
 	fi
 	mode=$1
@@ -32,9 +42,10 @@ for arg in $*; do
 	case $arg in
 		'test') set_mode test; do_test=true;;
 		'lint') set_mode lint; do_lint=true;;
-		'--no-db-setup') no_db_setup=true;; # don't perform DB setup operations
-		'--enable-coverage') enable_coverage=true;; # enable codecov generation
-		'--keep-test-db') keep_db=true;; # keep the test db created during test
+		'--no-db-setup') no_db_setup=true;;
+		'--enable-coverage') enable_coverage=true;;
+		'--keep-test-db') keep_db=true;;
+		'--help') print_help; exit 1;;
 	esac
 done
 
@@ -100,6 +111,7 @@ if [ $do_test ]; then
 
 	if [ $enable_coverage ]; then
 		coverage xml
+		coverage report
 	fi
 
 	if [ ! $no_db_setup ]; then
