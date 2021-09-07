@@ -20,6 +20,77 @@ from werkzeug.security import generate_password_hash
 
 # Helper functions
 
+def can_account_access(account_id, object):
+	"""
+	Takes an account ID and an object dict and checks if the provided object
+	can be accessed by the provided account.
+
+	Note that this function uses Account object IDs, not user IDs.
+	"""
+	if not object:
+		return False
+
+	object_type = object['object_type']
+
+	if object_type == 'message':
+		return can_account_access(account_id, db.get_object_as_dict_by_id(object['parent_channel']))
+
+	elif object_type == 'channel':
+		channel_type = object['channel_type']
+		if channel_type == 'text':
+			return can_account_access(account_id, db.get_object_dict_by_id(object['parent_conference']))
+		elif channel_type == 'direct_message':
+			if account_id in object['members']:
+				return True
+			else:
+				return False
+
+	elif object_type == 'conference':
+		conference_member = db.get_object_by_key_dict_value("conference_member", {"account_id": account_id})
+		if not conference_member:
+			return False
+
+		if conference_member in object['members']:
+			return True
+		else:
+			return False
+
+	elif object_type in ['conference_member', 'role']:
+		return can_account_access(account_id, db.get_object_dict_by_id(object['parent_conference']))
+
+	elif object_type == 'report':
+		if object['creator'] == account_id:
+			return True
+		elif is_account_admin(account_id):
+			return True
+		return False
+
+	elif object_type in ['instance', 'account', 'invite', 'emoji']:
+		return True
+
+def is_account_admin(account_id):
+	"""
+	Gets an user by the provided account ID and checks if the user is an admin
+	on the local instance. Returns True or False.
+	"""
+	with Session(db.engine) as db_session:
+		try:
+			user = db_session.query(User).filter(User.account_id == account_id).one()
+		except NoResultFound:
+			return False
+		return user.is_admin
+
+def get_user_by_account_id(account_id):
+	"""
+	Gets an user by the provided account ID.
+	"""
+	with Session(db.engine) as db_session:
+		try:
+			user = db_session.query(User).filter(User.account_id == account_id).one()
+		except NoResultFound:
+			return None
+		return user.to_dict()
+
 def login(user):
 	"""
 	Takes an User object and logs in as the provided user.

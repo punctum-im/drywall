@@ -7,7 +7,8 @@ from drywall import objects
 from drywall import pings
 from drywall import app
 from drywall import config
-from drywall import auth # noqa: F401
+from drywall import auth
+from drywall import auth_oauth
 from drywall import web  # noqa: F401
 
 import simplejson as json

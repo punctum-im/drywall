@@ -74,7 +74,7 @@ class ConferenceMember(Base, CustomSerializerMixin):
 	__tablename__ = 'conference_member'
 
 	id = Column('id', String(255), primary_key=True)
-	user_id = Column(String(255), ForeignKey('account.id'), nullable=False)
+	account_id = Column(String(255), ForeignKey('account.id'), nullable=False)
 	nickname = Column(Text)
 	parent_conference = Column(String(255), ForeignKey('conference.id'), nullable=False)
 	roles = Column(postgresql.ARRAY(String(255)))

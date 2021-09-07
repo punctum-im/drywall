@@ -146,13 +146,13 @@ require_oauth.register_token_validator(MyBearerTokenValidator())
 def authorize():
 	user = current_user()
 	if not user:
-		return redirect(url_for('login', next=request.url))
+		return redirect(url_for('auth_login', next=request.url))
 	if request.method == 'GET':
 		try:
 			grant = authorization_server.validate_consent_request(end_user=user)
 		except OAuth2Error as error:
 			return error.error
-		return render_template('oauth/authorize.html', user=user, grant=grant)
+		return render_template('auth/oauth_authorize.html', user=user, grant=grant)
 	if not user and 'username' in request.form:
 		username = request.form.get('username')
 		user = User.query.filter_by(username=username).first()

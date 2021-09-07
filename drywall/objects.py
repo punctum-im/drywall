@@ -394,11 +394,11 @@ class ConferenceMember(Object):
 	"""
 	type = 'object'
 	object_type = 'conference_member'
-	valid_keys = ["user_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
-	required_keys = ["user_id", "permissions", "parent_conference"]
+	valid_keys = ["account_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
+	required_keys = ["account_id", "permissions", "parent_conference"]
 	default_keys = {"banned": False, "roles": [], "permissions": "21101"}
-	key_types = {"user_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
-	id_key_types = {"user_id": "account", "roles": "role", "parent_conference": "conference"}
+	key_types = {"account_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
+	id_key_types = {"account_id": "account", "roles": "role", "parent_conference": "conference"}
 	nonrewritable_keys = []
 
 class Invite(Object):

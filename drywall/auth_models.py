@@ -9,10 +9,11 @@ from authlib.common.encoding import json_loads, json_dumps
 from authlib.oauth2.rfc6749 import ClientMixin, TokenMixin, AuthorizationCodeMixin
 #from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
 from datetime import time
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy_serializer import SerializerMixin
 
-class User(Base):
+class User(Base, SerializerMixin):
 	"""
 	Contains information about a registered user.
 	Not to be confused with Account objects.
@@ -24,6 +25,7 @@ class User(Base):
 	username = Column(String(255))
 	email = Column(String(255))
 	password = Column(Text)
+	is_admin = Column(Boolean, nullable=False)
 
 	def get_user_id(self):
 		return self.id
