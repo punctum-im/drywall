@@ -20,6 +20,14 @@ from werkzeug.security import generate_password_hash
 
 # Helper functions
 
+def current_user():
+	"""Returns the logged-in user. Returns None if not logged in."""
+	with Session(db.engine) as db_session:
+		if 'user_id' in session:
+			uid = session['user_id']
+			return db_session.query(User).get(uid)
+		return None
+
 def can_account_access(account_id, object):
 	"""
 	Takes an account ID and an object dict and checks if the provided object

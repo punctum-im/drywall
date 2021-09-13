@@ -1,0 +1,15 @@
+{% extends 'base-auth.html' %}
+
+{% block header %}
+  <h1>{% block title %}authorize{% endblock %}</h1>
+{% endblock %}
+
+{% block icon %}robot{% endblock %}
+
+{% block content %}
+<p>The application <strong>{{grant.client.client_name}}</strong> is requesting:
+<strong>{{ grant.request.scope }}</strong>
+</p>
+	<p>(you are currently logged in as {{{user.username}}}</p>
+  <span class="small">don't have an account? <a href="/auth/sign_up">sign up</a></span>
+{% endblock %}

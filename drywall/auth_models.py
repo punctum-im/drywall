@@ -25,7 +25,7 @@ class User(Base, SerializerMixin):
 	username = Column(String(255))
 	email = Column(String(255))
 	password = Column(Text)
-	is_admin = Column(Boolean, nullable=False)
+	is_admin = Column(Boolean, default=False, nullable=False)
 
 	def get_user_id(self):
 		return self.id
@@ -39,9 +39,12 @@ class Client(Base, ClientMixin):
 	client_secret_expires_at = Column(Integer, nullable=False, default=0)
 	_client_metadata = Column('client_metadata', Text)
 
+	type = Column(String(255), nullable=False)
+
 	owner_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 	owner = relationship('User')
 
+	# -*-*- AuthLib stuff begins here -*-*-
 	def get_client_id(self):
 		return self.client_id
 
@@ -131,6 +134,7 @@ class Token(Base, TokenMixin):
 	__tablename__ = 'tokens'
 	id = Column(String(255), primary_key=True) # In uuid4 format
 	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+	account_id = Column(Integer, ForeignKey('accounts.id', ondelete='CASCADE'))
 
 	client_id = Column(String(48))
 	token_type = Column(String(40))
