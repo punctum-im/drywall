@@ -190,6 +190,7 @@ class AuthorizationCode(Base, AuthorizationCodeMixin):
 	)
 
 	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
+	account_id = Column(Integer, ForeignKey('accounts.id', ondelete='CASCADE'))
 
 	code_challenge = Column(Text)
 	code_challenge_method = Column(String(48))

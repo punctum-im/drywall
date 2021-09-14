@@ -19,7 +19,9 @@ from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc7662 import IntrospectionEndpoint
 from flask import render_template, redirect, session, url_for
 import flask
+from secrets import token_urlsafe
 from sqlalchemy.orm import Session
+import time
 from uuid import uuid4
 
 # Client-related functions
@@ -55,7 +57,7 @@ def new_client(client_dict):
 		}
 		client.set_client_metadata(client_metadata)
 
-		client.client_secret = generate_secret()
+		client.client_secret = token_urlsafe(32)
 
 		db_session.add(client)
 		db_session.commit()
@@ -75,13 +77,15 @@ def save_token(token_data, request):
 	"""Saves a token to the database."""
 	if request.user:
 		user_id = request.user.get_user_id()
+		account_id = request.user.account_id
 	else:
 		user_id = request.client.user_id
+		user_id = request.client.account_id
 	with Session(db.engine) as db_session:
 		token = Token(
 			client_id=request.client.client_id,
 			user_id=user_id,
-			account_id=request.user.account_id,
+			account_id=account_id,
 			**token_data
 		)
 		db_session.add(token)
@@ -101,43 +105,51 @@ class AuthorizationCodeGrant(grants.AuthorizationCodeGrant):
 
 	def save_authorization_code(self, code, request):
 		client = request.client
-		auth_code = AuthorizationCode(
-			code=code,
-			client_id=client.client_id,
-			redirect_uri=request.redirect_uri,
-			scope=request.scope,
-			user_id=request.user.id,
-		)
-		db.session.add(auth_code)
-		db.session.commit()
-		return auth_code
+		with Session(db.engine) as db_session:
+			auth_code = AuthorizationCode(
+				code=code,
+				client_id=client.client_id,
+				redirect_uri=request.redirect_uri,
+				scope=request.scope,
+				user_id=request.user.id,
+				account_id=request.user.account_id,
+			)
+			db_session.add(auth_code)
+			db_session.commit()
+			return auth_code
 
 	def query_authorization_code(self, code, client):
-		item = AuthorizationCode.query.filter_by(code=code, client_id=client.client_id).first()
-		if item and not item.is_expired():
-				return item
+		with Session(db.engine) as db_session:
+			item = db_session.query(AuthorizationCode).filter_by(code=code, client_id=client.client_id).first()
+			if item and not item.is_expired():
+					return item
 
 	def delete_authorization_code(self, authorization_code):
-		db.session.delete(authorization_code)
-		db.session.commit()
+		with Session(db.engine) as db_session:
+			db_session.delete(authorization_code)
+			db_session.commit()
 
 	def authenticate_user(self, authorization_code):
-		return User.query.get(authorization_code.user_id)
+		with Session(db.engine) as db_session:
+			return db_session.query(User).get(authorization_code.user_id)
 
 
 class RefreshTokenGrant(grants.RefreshTokenGrant):
 	def authenticate_refresh_token(self, refresh_token):
-		item = Token.query.filter_by(refresh_token=refresh_token).first()
-		if item and item.is_refresh_token_valid():
+		with Session(db.engine) as db_session:
+			item = db_session.query(Token).filter_by(refresh_token=refresh_token).first()
+			if item and item.is_refresh_token_valid():
 				return item
 
 	def authenticate_user(self, credential):
-		return User.query.get(credential.user_id)
+		with Session(db.engine) as db_session:
+			return db_session.query(User).get(credential.user_id)
 
 	def revoke_old_credential(self, credential):
-		credential.revoked = True
-		db.session.add(credential)
-		db.session.commit()
+		with Session(db.engine) as db_session:
+			credential.revoked = True
+			db_session.add(credential)
+			db_session.commit()
 
 # Register all the grant endpoints
 authorization_server.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=False)])
@@ -197,13 +209,7 @@ def authorize():
 		except OAuth2Error as error:
 			return error.error
 		return render_template('auth/oauth_authorize.html', user=user, grant=grant)
-	if not user and 'username' in request.form:
-		username = flask.request.form.get('username')
-		user = User.query.filter_by(username=username).first()
-	if request.form['confirm']:
-		grant_user = user
-	else:
-		grant_user = None
+	grant_user = user
 	return authorization_server.create_authorization_response(grant_user=grant_user)
 
 @app.route('/oauth/revoke', methods=['POST'])
