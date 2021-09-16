@@ -20,14 +20,6 @@ from werkzeug.security import generate_password_hash
 
 # Helper functions
 
-def current_user():
-	"""Returns the logged-in user. Returns None if not logged in."""
-	with Session(db.engine) as db_session:
-		if 'user_id' in session:
-			uid = session['user_id']
-			return db_session.query(User).get(uid)
-		return None
-
 def can_account_access(account_id, object):
 	"""
 	Takes an account ID and an object dict and checks if the provided object
@@ -78,7 +70,7 @@ def can_account_access(account_id, object):
 
 def is_account_admin(account_id):
 	"""
-	Gets an user by the provided account ID and checks if the user is an admin
+	Gets a user by the provided account ID and checks if the user is an admin
 	on the local instance. Returns True or False.
 	"""
 	with Session(db.engine) as db_session:
@@ -88,9 +80,40 @@ def is_account_admin(account_id):
 			return False
 		return user.is_admin
 
+def login(user):
+	"""
+	Takes a User object and logs in as the provided user.
+	"""
+	if not isinstance(user, User):
+		raise TypeError("Provided object is not a User")
+	session.clear()
+	session["user_id"] = user.id
+	session["account_id"] = user.account_id
+
+# User management functions
+
+def current_user():
+	"""Returns the logged-in user. Returns None if not logged in."""
+	with Session(db.engine) as db_session:
+		if 'user_id' in session:
+			uid = session['user_id']
+			return db_session.query(User).get(uid)
+		return None
+
+def get_user_by_id(user_id):
+	"""
+	Gets a user by the provided user ID.
+	"""
+	with Session(db.engine) as db_session:
+		try:
+			user = db_session.query(User).get(user_id)
+		except NoResultFound:
+			return None
+		return user.to_dict()
+
 def get_user_by_account_id(account_id):
 	"""
-	Gets an user by the provided account ID.
+	Gets a user by the provided account ID.
 	"""
 	with Session(db.engine) as db_session:
 		try:
@@ -99,19 +122,9 @@ def get_user_by_account_id(account_id):
 			return None
 		return user.to_dict()
 
-def login(user):
-	"""
-	Takes an User object and logs in as the provided user.
-	"""
-	if not isinstance(user, User):
-		raise TypeError("Provided object is not an User")
-	session.clear()
-	session["user_id"] = user.id
-	session["user_account_id"] = user.account_id
-
 def get_user_by_email(email):
 	"""
-	Returns an User object with the provided e-mail address.
+	Returns a User object with the provided e-mail address.
 	If not found, returns None.
 	"""
 	with Session(db.engine) as db_session:
@@ -121,6 +134,66 @@ def get_user_by_email(email):
 			return None
 		return user
 
+def user_value_validation(username, email):
+	"""Does some basic validation on the provided user values"""
+	if username:
+		if db.get_object_by_key_value_pair("account", {"username": username}):
+			raise ValueError("Username taken.")
+	if email:
+		if get_user_by_email(email):
+			raise ValueError("E-mail already in use.")
+		try:
+			valid_email = validate_email(email).email
+		except EmailNotValidError:
+			raise ValueError("Provided e-mail is invalid.")
+
+def edit_user(user_id, _edit_dict):
+	"""
+	Edits a user using the values provided in the edit dict, which contains:
+
+	- username
+	- email
+	- account_id
+	"""
+	user_dict = get_user_by_id(user_id)
+
+	edit_dict = _edit_dict.copy()
+
+	username = None
+	if 'username' in edit_dict and edit_dict['username'] != user_dict['username']:
+		username = edit_dict['username']
+	email = None
+	if 'email' in edit_dict and edit_dict['email'] != user_dict['email']:
+		email = edit_dict['email']
+	if not username and not email:
+		return
+
+	account_id = edit_dict['account_id']
+	account_dict = db.get_object_as_dict_by_id(account_id)
+
+	user_value_validation(username, email)
+
+	if username:
+		account_dict['username'] = username,
+		user_dict['username'] = account_dict['username']
+	if email:
+		account_dict['email'] = email
+		user_dict['email'] = email
+
+	try:
+		new_account_dict = db.push_object(account_id,
+						objects.make_object_from_dict(account_dict, extend=account_id))
+		del edit_dict['account_id']
+		with Session(db.engine) as db_session:
+			new_user = db_session.query(User).get(user_id)
+			for key, value in edit_dict.items():
+				setattr(new_user, key, value)
+			db_session.commit()
+	except (KeyError, ValueError, TypeError) as e:
+		raise e
+
+	return user_dict
+
 def register_user(username, email, password):
 	"""
 	Registers a new user. Returns the Account object for the newly created
@@ -128,15 +201,7 @@ def register_user(username, email, password):
 
 	Raises a ValueError if the username or email is already taken.
 	"""
-	# Do some basic validation
-	if db.get_object_by_key_value_pair("account", {"username": username}):
-		raise ValueError("Username taken.")
-	if get_user_by_email(email):
-		raise ValueError("E-mail already in use.")
-	try:
-		valid_email = validate_email(email).email
-	except EmailNotValidError:
-		raise ValueError("Provided e-mail is invalid.")
+	user_value_validation(username, email)
 
 	# Create an Account object for the user
 	account_object = {"type": "object", "object_type": "account",

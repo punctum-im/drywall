@@ -26,6 +26,39 @@ from uuid import uuid4
 
 # Client-related functions
 
+def get_clients_owned_by_user(owner_id):
+	"""
+	Returns a list of Client objects owned by the user with the provided ID.
+
+	Returns None if none are found.
+	"""
+	clients = []
+	with Session(db.engine) as db_session:
+		query = db_session.query(Client).\
+				filter(Client.owner_id == owner_id).all()
+		if not query:
+			return None
+		for client in query:
+			clients.append(client)
+		return clients
+
+def get_auth_tokens_for_user(user_id):
+	"""
+	Returns a list of AuthorizationToken objects which act on behalf of
+	the user with the provided ID.
+
+	Returns None if none are found.
+	"""
+	tokens = []
+	with Session(db.engine) as db_session:
+		query = db_session.query(AuthorizationToken).\
+				filter(AuthorizationToken.user_id == user_id).all()
+		if not query:
+			return None
+		for token in query:
+			tokens.append(client)
+		return tokens
+
 def new_client(client_dict):
 	"""
 	Creates a new client from the provided client dict, which contains
@@ -33,7 +66,7 @@ def new_client(client_dict):
 
 	- name (string) - contains the name of the client.
 	- type (string) - 'userapp' or 'bot'
-	- uri (string)  - contains URI
+	- uri  (string) - contains URI
 	- scopes (list) - list of chosen scopes
 	- owner_id (id) - user ID of the creator
 
@@ -61,6 +94,7 @@ def new_client(client_dict):
 
 		db_session.add(client)
 		db_session.commit()
+		return client
 
 #
 # -*-*- AuthLib stuff starts here -*-*-
