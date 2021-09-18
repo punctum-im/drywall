@@ -72,13 +72,13 @@ if [ $do_test ]; then
 	# We use the names "drywall_testdb" and "drywall_test" to avoid conflicts
 	# with existing databases
 
-	if [ ! $no_db_setup ]; then
+	if [ -z $no_db_setup ]; then
 		sudo -Hu postgres psql <<- EOF
 		DROP DATABASE IF EXISTS drywall_testdb;
 		DROP USER IF EXISTS drywall_test;
 		CREATE DATABASE drywall_testdb;
 		CREATE USER drywall_test WITH PASSWORD 'drywall_test';
-		GRANT ALL PRIVLEGES ON DATABASE drywall_testdb TO drywall_test;
+		GRANT ALL PRIVILEGES ON DATABASE drywall_testdb TO drywall_test;
 		EOF
 	fi
 
@@ -114,7 +114,7 @@ if [ $do_test ]; then
 		coverage report
 	fi
 
-	if [ ! $no_db_setup ]; then
+	if [ -z $no_db_setup ]; then
 		if [ $keep_db ]; then
 			echo -e '\033[33m!!! Keeping test database.\033[0m'
 			echo -e '\033[33m!!! Note that it will be wiped on next test run!\033[0m'
