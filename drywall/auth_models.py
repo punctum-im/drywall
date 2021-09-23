@@ -39,10 +39,13 @@ class Client(Base, ClientMixin):
 	client_secret_expires_at = Column(Integer, nullable=False, default=0)
 	_client_metadata = Column('client_metadata', Text)
 
-	type = Column(String(255), nullable=False)
+	client_type = Column(String(255), nullable=False)
 
 	owner_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
 	owner = relationship('User')
+
+	bot_account_id = Column(String(255), ForeignKey('account.id', ondelete='CASCADE'))
+	bot_account = relationship('db_models.Account')
 
 	# -*-*- AuthLib stuff begins here -*-*-
 	def get_client_id(self):
@@ -133,8 +136,9 @@ class Token(Base, TokenMixin):
 	"""Authlib-compatible Token model"""
 	__tablename__ = 'tokens'
 	id = Column(String(255), primary_key=True) # In uuid4 format
+
 	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
-	account_id = Column(Integer, ForeignKey('accounts.id', ondelete='CASCADE'))
+	account_id = Column(String, ForeignKey('account.id', ondelete='CASCADE'))
 
 	client_id = Column(String(48))
 	token_type = Column(String(40))
@@ -190,7 +194,7 @@ class AuthorizationCode(Base, AuthorizationCodeMixin):
 	)
 
 	user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'))
-	account_id = Column(Integer, ForeignKey('accounts.id', ondelete='CASCADE'))
+	account_id = Column(String(255), ForeignKey('account.id', ondelete='CASCADE'))
 
 	code_challenge = Column(Text)
 	code_challenge_method = Column(String(48))

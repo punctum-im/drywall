@@ -3,7 +3,7 @@
 {% block icon %}pencil-alt{% endblock %}
 
 {% block header %}
-<h1>{% block title %}editing "{{ app_dict['name'] }}"{% endblock %}</h1>
+<h1>{% block title %}editing "{{ app_dict['client_metadata']['client_name'] }}"{% endblock %}</h1>
 {% endblock %}
 
 {% block settings %}
@@ -11,9 +11,9 @@
     <input type="submit" id="submit" class="button" value="submit">
 	<h2>App details</h2>
     <label for="name">name</label>
-    <input name="name" id="name" value="{{ app_dict['name'] }}" required>
+    <input name="name" id="name" value="{{app_dict['client_metadata']['client_name']}}" required>
     <label for="description">description</label>
-    <textarea name="description" id="description" required>{{ app_dict['description'] }}</textarea>
+    <textarea name="description" id="description" required>{{ app_dict['client_metadata']['client_description'] }}</textarea>
 	<h2>App type</h2>
 	<div class="typebox">
 		<div class="type" id="type-userapp">
@@ -147,7 +147,7 @@
 				break;
 		}
 	}
-	toggletype('{{ app_dict["type"] }}');
+	toggletype('{{ app_dict["client_type"] }}');
 </script>
 <style>
 .typebox { display: block; }

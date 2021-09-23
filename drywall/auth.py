@@ -1,6 +1,8 @@
 # encoding: utf-8
 """
-Contains code for authentication and OAuth2 support.
+Contains code for user authentication.
+
+OAuth2-related code can be found in the auth_oauth submodule.
 """
 from drywall.auth_models import User
 from drywall import app
@@ -11,10 +13,8 @@ from drywall import utils
 
 from flask import render_template, flash, request, redirect, session, url_for
 from email_validator import validate_email, EmailNotValidError
-from uuid import uuid4 # For client IDs
-from secrets import token_hex # For client secrets
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 
@@ -135,7 +135,10 @@ def get_user_by_email(email):
 		return user
 
 def user_value_validation(username, email):
-	"""Does some basic validation on the provided user values"""
+	"""
+	Does some basic validation on the provided user values.
+	Returns the validated e-mail address, for convenience.
+	"""
 	if username:
 		if db.get_object_by_key_value_pair("account", {"username": username}):
 			raise ValueError("Username taken.")
@@ -143,7 +146,7 @@ def user_value_validation(username, email):
 		if get_user_by_email(email):
 			raise ValueError("E-mail already in use.")
 		try:
-			valid_email = validate_email(email).email
+			return validate_email(email).email
 		except EmailNotValidError:
 			raise ValueError("Provided e-mail is invalid.")
 
@@ -171,14 +174,15 @@ def edit_user(user_id, _edit_dict):
 	account_id = edit_dict['account_id']
 	account_dict = db.get_object_as_dict_by_id(account_id)
 
-	user_value_validation(username, email)
+	# user_value_validation returns the valid e-mail, for convenience's sake
+	valid_email = user_value_validation(username, email)
 
 	if username:
 		account_dict['username'] = username,
 		user_dict['username'] = account_dict['username']
 	if email:
-		account_dict['email'] = email
-		user_dict['email'] = email
+		account_dict['email'] = valid_email
+		user_dict['email'] = valid_email
 
 	try:
 		new_account_dict = db.push_object(account_id,
@@ -201,7 +205,8 @@ def register_user(username, email, password):
 
 	Raises a ValueError if the username or email is already taken.
 	"""
-	user_value_validation(username, email)
+	# user_value_validation returns the valid e-mail, for convenience's sake
+	valid_email = user_value_validation(username, email)
 
 	# Create an Account object for the user
 	account_object = {"type": "object", "object_type": "account",

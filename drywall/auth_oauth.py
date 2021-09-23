@@ -9,6 +9,7 @@ from drywall.auth_models import User, Client, Token, AuthorizationCode
 from drywall.auth import current_user
 from drywall import app
 from drywall import db
+from drywall import objects
 
 from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector, current_token
 from authlib.oauth2 import OAuth2Error
@@ -20,6 +21,7 @@ from authlib.oauth2.rfc7662 import IntrospectionEndpoint
 from flask import render_template, redirect, session, url_for
 import flask
 from secrets import token_urlsafe
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 import time
 from uuid import uuid4
@@ -34,9 +36,10 @@ def get_clients_owned_by_user(owner_id):
 	"""
 	clients = []
 	with Session(db.engine) as db_session:
-		query = db_session.query(Client).\
-				filter(Client.owner_id == owner_id).all()
-		if not query:
+		try:
+			query = db_session.query(Client).\
+					filter(Client.owner_id == owner_id).all()
+		except NoResultFound:
 			return None
 		for client in query:
 			clients.append(client)
@@ -44,53 +47,73 @@ def get_clients_owned_by_user(owner_id):
 
 def get_auth_tokens_for_user(user_id):
 	"""
-	Returns a list of AuthorizationToken objects which act on behalf of
+	Returns a list of AuthorizationCode objects which act on behalf of
 	the user with the provided ID.
 
 	Returns None if none are found.
 	"""
 	tokens = []
 	with Session(db.engine) as db_session:
-		query = db_session.query(AuthorizationToken).\
-				filter(AuthorizationToken.user_id == user_id).all()
-		if not query:
+		try:
+			query = db_session.query(AuthorizationCode).\
+					filter(AuthorizationCode.user_id == user_id).all()
+		except NoResultFound:
 			return None
 		for token in query:
-			tokens.append(client)
+			tokens.append(token)
 		return tokens
 
-def new_client(client_dict):
+def create_client(client_dict):
 	"""
 	Creates a new client from the provided client dict, which contains
 	the following variables:
 
 	- name (string) - contains the name of the client.
+	- description (string) - contains the description.
 	- type (string) - 'userapp' or 'bot'
 	- uri  (string) - contains URI
 	- scopes (list) - list of chosen scopes
 	- owner_id (id) - user ID of the creator
+	- owner_account_id (id) - account ID of the creator
 
 	This automatically creates an account in case of a bot account, and
 	adds the resulting client to the database.
 
 	Returns the created client.
 	"""
+	if not 'description' in client_dict.keys():
+		client_dict['description'] = ""
+
 	with Session(db.engine) as db_session:
 		client = Client(
 			client_id=str(uuid4()),
 			client_id_issued_at = int(time.time()),
-			type=client_dict['type'],
+			client_type=client_dict['type'],
 			owner_id=client_dict['owner_id']
 		)
 
 		client_metadata = {
 			"client_name": client_dict['name'],
+			"client_description": client_dict['description'],
 			"client_uri": client_dict['uri'],
 			"scope": client_dict['scopes']
 		}
 		client.set_client_metadata(client_metadata)
 
 		client.client_secret = token_urlsafe(32)
+
+		if client_dict['type'] == 'bot':
+			account_dict = {
+				"object_type": "account",
+				"username": client_dict['name'],
+				"bot": True,
+				"bot_owner": client_dict['owner_account_id']
+			}
+			account_object = objects.make_object_from_dict(account_dict)
+			db.add_object(account_object)
+			client.bot_account_id=vars(account_object)['id']
+
+		print(vars(client))
 
 		db_session.add(client)
 		db_session.commit()
