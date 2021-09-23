@@ -7,12 +7,11 @@ For OAuth-related pages (/oauth/*), see the auth_oauth submodule.
 For user settings (/settings/*), see the web_settings submodule.
 """
 from drywall import app
-from drywall import auth
 from drywall import config
 from drywall import db
-from drywall import web_settings
+from drywall import web_settings # noqa: F401
 
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import flash, redirect, render_template, url_for
 
 def _info_page(template):
 	"""Shorthand for info page initialization."""

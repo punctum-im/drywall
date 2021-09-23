@@ -7,7 +7,9 @@ from drywall.db_models import Base
 
 from authlib.common.encoding import json_loads, json_dumps
 from authlib.oauth2.rfc6749 import ClientMixin, TokenMixin, AuthorizationCodeMixin
-#from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
+# FIXME: these functions appear to be missing, fix this once AuthLib 1.0 is out
+# from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
+from authlib.common.encoding import to_unicode
 from datetime import time
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Boolean
 from sqlalchemy.orm import relationship
@@ -177,7 +179,7 @@ class Token(Base, TokenMixin):
 		return True
 
 # FIXME: This should ideally be stored in a cache like Redis. Caching is
-#		veeeery far on our TODO list though, so we've got time.
+#        veeeery far on our TODO list though, so we've got time.
 class AuthorizationCode(Base, AuthorizationCodeMixin):
 	__tablename__ = 'authcodes'
 	id = Column(Integer, primary_key=True)
@@ -215,8 +217,6 @@ class AuthorizationCode(Base, AuthorizationCodeMixin):
 		return self.nonce
 
 # FIXME: temporary until 1.0 is released
-from authlib.common.encoding import to_unicode
-
 def list_to_scope(scope):
 	"""Convert a list of scopes to a space separated string."""
 	if isinstance(scope, (set, tuple, list)):

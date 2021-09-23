@@ -9,13 +9,12 @@ For information pages (/about/*), see the web submodule.
 from drywall import app
 from drywall import auth
 from drywall import auth_oauth
-from drywall import config
 from drywall import db
-from drywall import objects
 from drywall import utils
 
 from flask import flash, redirect, render_template, request, session, url_for
-from email_validator import validate_email, EmailNotValidError
+
+# Helper functions
 
 def _settings_sanity_checks():
 	"""Sanity checks for settings pages."""
@@ -44,33 +43,6 @@ def _settings_render(template, category, is_subpage=False, **kwargs):
 	                       settings_subpage=is_subpage,
 	                       settings_category=category,
 						   **kwargs)
-
-@app.route('/settings')
-def settings_redirect():
-	"""Settings page."""
-	if "user_id" in session:
-		return redirect(url_for('settings_account'))
-	return redirect(url_for('auth_login'))
-
-@app.route('/settings/account', methods=["GET", "POST"])
-def settings_account():
-	"""Account settings."""
-	_sanity_check =_settings_sanity_checks()
-	if _sanity_check:
-		return _sanity_check
-
-	if request.method == "POST":
-		session["account_dict"] = db.get_object_as_dict_by_id(session["account_id"])
-		edit_dict = dict(request.form)
-		edit_dict['account_id'] = session["account_id"]
-		try:
-			auth.edit_user(session["user_id"], edit_dict)
-		except (KeyError, ValueError, TypeError) as e:
-			flash(str(e))
-		session["account_dict"] = db.get_object_as_dict_by_id(session["account_id"])
-		return redirect(url_for('settings_account'))
-
-	return _settings_render("settings/account.html", "account")
 
 scopebox_scopes = {"account-read": "account:read", # noqa: E305
     "account-write": "account:write",
@@ -103,10 +75,41 @@ def web_scopebox_to_scopes(form_dict, cleanup_form_dict=False):
 	else:
 		return scopes
 
+# Account settings
+
+@app.route('/settings')
+def settings_redirect():
+	"""Settings page."""
+	if "user_id" in session:
+		return redirect(url_for('settings_account'))
+	return redirect(url_for('auth_login'))
+
+@app.route('/settings/account', methods=["GET", "POST"])
+def settings_account():
+	"""Account settings."""
+	_sanity_check = _settings_sanity_checks()
+	if _sanity_check:
+		return _sanity_check
+
+	if request.method == "POST":
+		session["account_dict"] = db.get_object_as_dict_by_id(session["account_id"])
+		edit_dict = dict(request.form)
+		edit_dict['account_id'] = session["account_id"]
+		try:
+			auth.edit_user(session["user_id"], edit_dict)
+		except (KeyError, ValueError, TypeError) as e:
+			flash(str(e))
+		session["account_dict"] = db.get_object_as_dict_by_id(session["account_id"])
+		return redirect(url_for('settings_account'))
+
+	return _settings_render("settings/account.html", "account")
+
+# Client settings
+
 @app.route('/settings/clients', methods=["GET", "POST"])
 def settings_clients():
 	"""OAuth client settings."""
-	_sanity_check =_settings_sanity_checks()
+	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
 	print(auth_oauth.get_clients_owned_by_user(session["user_id"]))
@@ -116,7 +119,7 @@ def settings_clients():
 @app.route('/settings/clients/new', methods=["GET", "POST"])
 def settings_clients_new():
 	"""New app creation."""
-	_sanity_check =_settings_sanity_checks()
+	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
 
@@ -144,23 +147,20 @@ def settings_clients_new():
 @app.route('/settings/clients/<client_id>', methods=["GET", "POST"])
 def settings_clients_edit(client_id):
 	"""App editing."""
-	_sanity_check =_settings_sanity_checks()
+	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
 	if client_id == "":
 		return redirect(url_for('settings_clients'))
 
-	user_apps = auth_oauth.get_clients_owned_by_user(session['user_id'])
-	app_dict = None
-	for oauth_app in user_apps:
-		if vars(oauth_app)["client_id"] == client_id:
-			app_dict = oauth_app
-			break
+	app_dict = auth_oauth.get_client_if_owned_by_user(session['user_id'], client_id)
 	if not app_dict:
 		return render_template("settings/clients_404.html"), 404
+
 	app_scopes = app_dict.client_metadata["scope"].copy()
 	app_scopes = utils.replace_values_in_dict_by_value({"True": "checked"}, app_scopes)
 	app_scopes = utils.fill_dict_with_dummy_values(scopebox_scopes.values(), app_scopes, dummy="")
+
 	if request.method == "POST":
 		client_dict_info = web_scopebox_to_scopes(dict(request.form), cleanup_form_dict=True)
 		client_dict = client_dict_info[1]
@@ -180,34 +180,19 @@ def settings_clients_edit(client_id):
 @app.route('/settings/clients/<client_id>/remove', methods=["GET", "POST"])
 def settings_clients_edit_remove(client_id):
 	"""App removal (not to be confused with revoking)."""
-	if "user_id" not in session:
-		return redirect(url_for('auth_login'))
+	_sanity_check = _settings_sanity_checks()
+	if _sanity_check:
+		return _sanity_check
 	if client_id == "":
 		return redirect(url_for('settings_clients'))
-	user_dict = session['account_dict']
-	user_apps = db.get_clients_for_user(user_dict['id'], 'owner')
-	app_dict = None
-	for oauth_app in user_apps:
-		if oauth_app["client_id"] == client_id:
-			app_dict = oauth_app
-			break
+
+	app_dict = auth_oauth.get_client_if_owned_by_user(session['user_id'], client_id)
 	if not app_dict:
 		return render_template("settings/clients_404.html"), 404
+
 	if request.method == "POST":
-		db.remove_client(app_dict["client_id"])
-		flash("Removed " + app_dict["name"] + ".")
+		auth_oauth.remove_client(app_dict.client_id)
+		flash("Removed " + app_dict.client_metadata["client_name"] + ".")
 		return redirect('/settings/clients')
-	instance = db.get_object_as_dict_by_id("0")
-	session["user_dict"] = db.get_object_as_dict_by_id(session["account_id"])
-	if not db.get_object_as_dict_by_id(session["account_id"]):
-		return redirect(url_for('auth_logout'))
-	return render_template("settings/clients_remove.html",
-	                       user_dict=user_dict,
-	                       user_name=user_dict["username"],
-	                       user_email=user_dict["email"],
-	                       app_dict=app_dict,
-	                       instance_name=instance["name"],
-	                       instance_description=instance["description"],
-	                       instance_domain=instance["address"],
-	                       settings_subpage=True,
-	                       settings_category="clients")
+
+	return _settings_render("settings/clients_remove.html", "clients", is_subpage=True)

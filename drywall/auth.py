@@ -6,10 +6,8 @@ OAuth2-related code can be found in the auth_oauth submodule.
 """
 from drywall.auth_models import User
 from drywall import app
-from drywall import config
 from drywall import db
 from drywall import objects
-from drywall import utils
 
 from flask import render_template, flash, request, redirect, session, url_for
 from email_validator import validate_email, EmailNotValidError
@@ -185,8 +183,8 @@ def edit_user(user_id, _edit_dict):
 		user_dict['email'] = valid_email
 
 	try:
-		new_account_dict = db.push_object(account_id,
-						objects.make_object_from_dict(account_dict, extend=account_id))
+		new_account = objects.make_object_from_dict(account_dict, extend=account_id)
+		db.push_object(account_id, new_account)
 		del edit_dict['account_id']
 		with Session(db.engine) as db_session:
 			new_user = db_session.query(User).get(user_id)
@@ -239,7 +237,7 @@ def auth_login():
 			user = get_user_by_email(valid_email)
 			if not user:
 				raise ValueError("User with provided email does not exist.")
-			with Session(db.engine) as db_session:
+			with Session(db.engine):
 				if not check_password_hash(user.password, password):
 					raise ValueError("Invalid password.")
 		except (ValueError, EmailNotValidError) as e:

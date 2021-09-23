@@ -11,14 +11,13 @@ from drywall import app
 from drywall import db
 from drywall import objects
 
-from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector, current_token
+from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector
 from authlib.oauth2 import OAuth2Error
 from authlib.oauth2.rfc6749 import grants
 from authlib.oauth2.rfc6750 import BearerTokenValidator
 from authlib.oauth2.rfc7009 import RevocationEndpoint
 from authlib.oauth2.rfc7636 import CodeChallenge
-from authlib.oauth2.rfc7662 import IntrospectionEndpoint
-from flask import render_template, redirect, session, url_for
+from flask import render_template, redirect, url_for
 import flask
 from secrets import token_urlsafe
 from sqlalchemy.exc import NoResultFound
@@ -38,7 +37,7 @@ def get_clients_owned_by_user(owner_id):
 	with Session(db.engine) as db_session:
 		try:
 			query = db_session.query(Client).\
-					filter(Client.owner_id == owner_id).all()
+					filter(Client.owner_id == owner_id).all() # noqa: ET126
 		except NoResultFound:
 			return None
 		for client in query:
@@ -56,12 +55,39 @@ def get_auth_tokens_for_user(user_id):
 	with Session(db.engine) as db_session:
 		try:
 			query = db_session.query(AuthorizationCode).\
-					filter(AuthorizationCode.user_id == user_id).all()
+					filter(AuthorizationCode.user_id == user_id).all() # noqa: ET126
 		except NoResultFound:
 			return None
 		for token in query:
 			tokens.append(token)
 		return tokens
+
+def get_client_by_id(client_id):
+	"""
+	Returns a Client object with the provided ID.
+
+	Returns None if a client with the given ID is not found.
+	"""
+	with Session(db.engine) as db_session:
+		try:
+			client = db_session.query(Client).get(client_id)
+		except NoResultFound:
+			return None
+		return client
+
+def get_client_if_owned_by_user(user_id, client_id):
+	"""
+	Returns a Client object if the user with the provided ID is its owner.
+
+	Returns False if the client is not owned by the user.
+	Returns None if a client with the given ID is not found.
+	"""
+	client = get_client_by_id(client_id)
+	if not client:
+		return None
+	if not client.owner_id == user_id:
+		return False
+	return client
 
 def create_client(client_dict):
 	"""
@@ -81,13 +107,13 @@ def create_client(client_dict):
 
 	Returns the created client.
 	"""
-	if not 'description' in client_dict.keys():
+	if 'description' not in client_dict.keys():
 		client_dict['description'] = ""
 
 	with Session(db.engine) as db_session:
 		client = Client(
 			client_id=str(uuid4()),
-			client_id_issued_at = int(time.time()),
+			client_id_issued_at=int(time.time()),
 			client_type=client_dict['type'],
 			owner_id=client_dict['owner_id']
 		)
@@ -111,9 +137,7 @@ def create_client(client_dict):
 			}
 			account_object = objects.make_object_from_dict(account_dict)
 			db.add_object(account_object)
-			client.bot_account_id=vars(account_object)['id']
-
-		print(vars(client))
+			client.bot_account_id = vars(account_object)['id']
 
 		db_session.add(client)
 		db_session.commit()
@@ -147,6 +171,7 @@ def save_token(token_data, request):
 		)
 		db_session.add(token)
 		db_session.commit()
+
 
 # Initialize the authorization server.
 authorization_server = AuthorizationServer(
@@ -208,6 +233,7 @@ class RefreshTokenGrant(grants.RefreshTokenGrant):
 			db_session.add(credential)
 			db_session.commit()
 
+
 # Register all the grant endpoints
 authorization_server.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=False)])
 authorization_server.register_grant(grants.ImplicitGrant)
@@ -232,6 +258,7 @@ class _RevocationEndpoint(RevocationEndpoint):
 		db.session.add(token)
 		db.session.commit()
 
+
 authorization_server.register_endpoint(_RevocationEndpoint)
 
 # Define resource server/resource protector
@@ -244,6 +271,7 @@ class _BearerTokenValidator(BearerTokenValidator):
 
 	def token_revoked(self, token):
 		return token.revoked
+
 
 require_oauth = ResourceProtector()
 require_oauth.register_token_validator(_BearerTokenValidator())
