@@ -10,6 +10,8 @@ from drywall.auth import current_user
 from drywall import app
 from drywall import db
 from drywall import objects
+# FIXME: temporary until authlib 1.0 is released
+from drywall.auth_models import list_to_scope
 
 from authlib.integrations.flask_oauth2 import AuthorizationServer, ResourceProtector
 from authlib.oauth2 import OAuth2Error
@@ -122,7 +124,7 @@ def create_client(client_dict):
 			"client_name": client_dict['name'],
 			"client_description": client_dict['description'],
 			"client_uri": client_dict['uri'],
-			"scope": client_dict['scopes']
+			"scope": list_to_scope('scopes')
 		}
 		client.set_client_metadata(client_metadata)
 
@@ -142,6 +144,48 @@ def create_client(client_dict):
 		db_session.add(client)
 		db_session.commit()
 		return client
+
+def update_client(client_id, client_dict):
+	"""
+	Updates the client in the database with the provided variables.
+
+	Returns the updated client.
+	"""
+	with Session(db.engine) as db_session:
+		try:
+			client = db_session.query(Client).get(id)
+		except NoResultFound:
+			return None
+
+		client_metadata = client.client_metadata.copy()
+		for val in ['name', 'description', 'uri', 'scopes']:
+			if val in client_dict:
+				if val == 'scopes':
+					client_metadata["scope"] = list_to_scope(client_dict['scopes'])
+				else:
+					client_metadata["client_" + val] = client_dict[val]
+		client.set_client_metadata(client_metadata)
+
+		if client.client_type == 'bot' and 'name' in client_dict:
+			account_id = client.bot_account_id
+			account = db.get_object_as_dict_by_id(account_id)
+			if account['username'] != client_dict['name']:
+				account['name'] = client_dict['name']
+				account_object = objects.make_object_from_dict(account, extend=account_id)
+				db.push_object(account_id, account_object)
+
+		db_session.commit()
+		return client
+
+def remove_client(client_id):
+	"""
+	Removes a client by ID. Returns the deleted client's ID.
+	"""
+	with Session(db.engine) as db_session:
+		client = db_session.query(Client).get(client_id)
+		db_session.delete(client)
+		db_session.commit()
+	return client_id
 
 #
 # -*-*- AuthLib stuff starts here -*-*-

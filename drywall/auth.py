@@ -198,8 +198,8 @@ def edit_user(user_id, _edit_dict):
 
 def register_user(username, email, password):
 	"""
-	Registers a new user. Returns the Account object for the newly created
-	user.
+	Registers a new user. Returns a dict with the values of the
+	resulting User object.
 
 	Raises a ValueError if the username or email is already taken.
 	"""
@@ -221,8 +221,7 @@ def register_user(username, email, password):
 	with Session(db.engine) as db_session:
 		db_session.add(new_user)
 		db_session.commit()
-
-	return new_user
+		return new_user.to_dict()
 
 # Pages
 

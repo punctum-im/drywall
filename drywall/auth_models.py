@@ -216,7 +216,7 @@ class AuthorizationCode(Base, AuthorizationCodeMixin):
 	def get_nonce(self):
 		return self.nonce
 
-# FIXME: temporary until 1.0 is released
+# FIXME: temporary until authlib 1.0 is released
 def list_to_scope(scope):
 	"""Convert a list of scopes to a space separated string."""
 	if isinstance(scope, (set, tuple, list)):

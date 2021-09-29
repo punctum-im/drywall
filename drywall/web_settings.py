@@ -137,7 +137,11 @@ def settings_clients_new():
 		client_dict["uri"] = 'FIXME'
 
 		# Attempt to create a client
-		auth_oauth.create_client(client_dict)
+		try:
+			auth_oauth.create_client(client_dict)
+		except ValueError as e:
+			flash(str(e))
+			return redirect(url_for('settings_clients_new'))
 
 		# Once done, return to client settings
 		return redirect(url_for('settings_clients'))
@@ -150,8 +154,6 @@ def settings_clients_edit(client_id):
 	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
-	if client_id == "":
-		return redirect(url_for('settings_clients'))
 
 	app_dict = auth_oauth.get_client_if_owned_by_user(session['user_id'], client_id)
 	if not app_dict:
@@ -183,8 +185,6 @@ def settings_clients_edit_remove(client_id):
 	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
-	if client_id == "":
-		return redirect(url_for('settings_clients'))
 
 	app_dict = auth_oauth.get_client_if_owned_by_user(session['user_id'], client_id)
 	if not app_dict:
