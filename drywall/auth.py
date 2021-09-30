@@ -80,13 +80,11 @@ def is_account_admin(account_id):
 
 def login(user):
 	"""
-	Takes a User object and logs in as the provided user.
+	Takes a dict created from a User object and logs in as the provided user.
 	"""
-	if not isinstance(user, User):
-		raise TypeError("Provided object is not a User")
 	session.clear()
-	session["user_id"] = user.id
-	session["account_id"] = user.account_id
+	session["user_id"] = user['id']
+	session["account_id"] = user['account_id']
 
 # User management functions
 
@@ -100,7 +98,8 @@ def current_user():
 
 def get_user_by_id(user_id):
 	"""
-	Gets a user by the provided user ID.
+	Gets a user by the provided user ID. Returns a dict with the user's
+	values.
 	"""
 	with Session(db.engine) as db_session:
 		try:
@@ -111,7 +110,8 @@ def get_user_by_id(user_id):
 
 def get_user_by_account_id(account_id):
 	"""
-	Gets a user by the provided account ID.
+	Gets a user by the provided account ID. Returns a dict with the user's
+	values.
 	"""
 	with Session(db.engine) as db_session:
 		try:
@@ -122,7 +122,9 @@ def get_user_by_account_id(account_id):
 
 def get_user_by_email(email):
 	"""
-	Returns a User object with the provided e-mail address.
+	Returns a dict created from the User object with the provided e-mail
+	address.
+
 	If not found, returns None.
 	"""
 	with Session(db.engine) as db_session:
@@ -130,7 +132,7 @@ def get_user_by_email(email):
 			user = db_session.query(User).filter(User.email == email).one()
 		except NoResultFound:
 			return None
-		return user
+		return user.to_dict()
 
 def user_value_validation(username, email):
 	"""
@@ -147,54 +149,6 @@ def user_value_validation(username, email):
 			return validate_email(email).email
 		except EmailNotValidError:
 			raise ValueError("Provided e-mail is invalid.")
-
-def edit_user(user_id, _edit_dict):
-	"""
-	Edits a user using the values provided in the edit dict, which contains:
-
-	- username
-	- email
-	- account_id
-	"""
-	user_dict = get_user_by_id(user_id)
-
-	edit_dict = _edit_dict.copy()
-
-	username = None
-	if 'username' in edit_dict and edit_dict['username'] != user_dict['username']:
-		username = edit_dict['username']
-	email = None
-	if 'email' in edit_dict and edit_dict['email'] != user_dict['email']:
-		email = edit_dict['email']
-	if not username and not email:
-		return
-
-	account_id = edit_dict['account_id']
-	account_dict = db.get_object_as_dict_by_id(account_id)
-
-	# user_value_validation returns the valid e-mail, for convenience's sake
-	valid_email = user_value_validation(username, email)
-
-	if username:
-		account_dict['username'] = username,
-		user_dict['username'] = account_dict['username']
-	if email:
-		account_dict['email'] = valid_email
-		user_dict['email'] = valid_email
-
-	try:
-		new_account = objects.make_object_from_dict(account_dict, extend=account_id)
-		db.push_object(account_id, new_account)
-		del edit_dict['account_id']
-		with Session(db.engine) as db_session:
-			new_user = db_session.query(User).get(user_id)
-			for key, value in edit_dict.items():
-				setattr(new_user, key, value)
-			db_session.commit()
-	except (KeyError, ValueError, TypeError) as e:
-		raise e
-
-	return user_dict
 
 def register_user(username, email, password):
 	"""
@@ -222,6 +176,59 @@ def register_user(username, email, password):
 		db_session.add(new_user)
 		db_session.commit()
 		return new_user.to_dict()
+
+
+def edit_user(user_id, _edit_dict):
+	"""
+	Edits a user using the values provided in the edit dict, which contains:
+
+	- username
+	- email
+	- account_id
+	"""
+	user_dict = get_user_by_id(user_id)
+
+	edit_dict = {}
+	for key in ['username', 'email', 'account_id']:
+		edit_dict[key] = _edit_dict[key]
+
+	username = None
+	if 'username' in edit_dict and edit_dict['username'] != user_dict['username']:
+		username = edit_dict['username']
+	email = None
+	if 'email' in edit_dict and edit_dict['email'] != user_dict['email']:
+		email = edit_dict['email']
+	if not username and not email:
+		return
+
+	account_id = edit_dict['account_id']
+	account_dict = db.get_object_as_dict_by_id(account_id)
+
+	# user_value_validation returns the valid e-mail, for convenience's sake
+	valid_email = user_value_validation(username, email)
+
+	if username:
+		account_dict['username'] = username,
+		user_dict['username'] = account_dict['username']
+	if email:
+		account_dict['email'] = valid_email
+		user_dict['email'] = valid_email
+
+	try:
+		new_account = objects.make_object_from_dict(account_dict, extend=account_id)
+		db.push_object(account_id, new_account)
+		del edit_dict['account_id']
+
+		with Session(db.engine) as db_session:
+			new_user = db_session.query(User).get(user_id)
+			for key, value in edit_dict.items():
+				setattr(new_user, key, value)
+			db_session.commit()
+
+	except (KeyError, ValueError, TypeError) as e:
+		raise e
+
+	return user_dict
 
 # Pages
 

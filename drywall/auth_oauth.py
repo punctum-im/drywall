@@ -22,7 +22,6 @@ from authlib.oauth2.rfc7636 import CodeChallenge
 from flask import render_template, redirect, url_for
 import flask
 from secrets import token_urlsafe
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 import time
 from uuid import uuid4
@@ -31,19 +30,18 @@ from uuid import uuid4
 
 def get_clients_owned_by_user(owner_id):
 	"""
-	Returns a list of Client objects owned by the user with the provided ID.
+	Returns a list of Client dicts owned by the user with the provided ID.
 
 	Returns None if none are found.
 	"""
 	clients = []
 	with Session(db.engine) as db_session:
-		try:
-			query = db_session.query(Client).\
-					filter(Client.owner_id == owner_id).all() # noqa: ET126
-		except NoResultFound:
-			return None
+		query = db_session.query(Client).\
+				filter(Client.owner_id == owner_id).all() # noqa: ET126
+		if not query:
+			return []
 		for client in query:
-			clients.append(client)
+			clients.append(client.to_dict())
 		return clients
 
 def get_auth_tokens_for_user(user_id):
@@ -55,31 +53,30 @@ def get_auth_tokens_for_user(user_id):
 	"""
 	tokens = []
 	with Session(db.engine) as db_session:
-		try:
-			query = db_session.query(AuthorizationCode).\
-					filter(AuthorizationCode.user_id == user_id).all() # noqa: ET126
-		except NoResultFound:
-			return None
+		query = db_session.query(AuthorizationCode).\
+				filter(AuthorizationCode.user_id == user_id).all() # noqa: ET126
+		if not query:
+			return []
 		for token in query:
 			tokens.append(token)
 		return tokens
 
 def get_client_by_id(client_id):
 	"""
-	Returns a Client object with the provided ID.
+	Returns a dict from a Client object with the provided ID.
 
 	Returns None if a client with the given ID is not found.
 	"""
 	with Session(db.engine) as db_session:
-		try:
-			client = db_session.query(Client).get(client_id)
-		except NoResultFound:
+		client = db_session.query(Client).get(client_id)
+		if not client:
 			return None
-		return client
+		return client.to_dict()
 
 def get_client_if_owned_by_user(user_id, client_id):
 	"""
-	Returns a Client object if the user with the provided ID is its owner.
+	Returns a dict from a Client object if the user with the provided ID
+	is its owner.
 
 	Returns False if the client is not owned by the user.
 	Returns None if a client with the given ID is not found.
@@ -87,7 +84,7 @@ def get_client_if_owned_by_user(user_id, client_id):
 	client = get_client_by_id(client_id)
 	if not client:
 		return None
-	if not client.owner_id == user_id:
+	if not client['owner_id'] == user_id:
 		return False
 	return client
 
@@ -143,18 +140,17 @@ def create_client(client_dict):
 
 		db_session.add(client)
 		db_session.commit()
-		return client
+		return client.to_dict()
 
-def update_client(client_id, client_dict):
+def edit_client(client_id, client_dict):
 	"""
 	Updates the client in the database with the provided variables.
 
-	Returns the updated client.
+	Returns the updated client as a dict.
 	"""
 	with Session(db.engine) as db_session:
-		try:
-			client = db_session.query(Client).get(id)
-		except NoResultFound:
+		client = db_session.query(Client).get(client_id)
+		if not client:
 			return None
 
 		client_metadata = client.client_metadata.copy()
@@ -170,12 +166,14 @@ def update_client(client_id, client_dict):
 			account_id = client.bot_account_id
 			account = db.get_object_as_dict_by_id(account_id)
 			if account['username'] != client_dict['name']:
-				account['name'] = client_dict['name']
+				account['username'] = client_dict['name']
 				account_object = objects.make_object_from_dict(account, extend=account_id)
 				db.push_object(account_id, account_object)
 
 		db_session.commit()
-		return client
+		# FIXME: This should return client.to_dict() but that doesn't update
+		#        client_metadata for some reason.
+		return get_client_by_id(client_id)
 
 def remove_client(client_id):
 	"""
@@ -183,6 +181,8 @@ def remove_client(client_id):
 	"""
 	with Session(db.engine) as db_session:
 		client = db_session.query(Client).get(client_id)
+		if not client:
+			return None
 		db_session.delete(client)
 		db_session.commit()
 	return client_id
@@ -194,7 +194,7 @@ def remove_client(client_id):
 # Helper functions
 
 def query_client(client_id):
-	"""Gets a client by ID. Returns None if not found."""
+	"""Gets a Client object by ID. Returns None if not found."""
 	with Session(db.engine) as db_session:
 		return db_session.query(Client).filter_by(client_id=client_id).first()
 

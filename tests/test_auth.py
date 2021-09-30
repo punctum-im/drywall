@@ -28,9 +28,8 @@ def generate_clients():
 	Creates two clients for testing purposes: an user app and a bot.
 
 	Returns a dict with two items:
-		- app: list where [0] is the ID and [1] is the dict
-		- bot: list where [0] is the ID, [1] is the dict and [2] is
-			   the account ID
+		- app: dict containing values for a client with userapp type
+		- bot: dict containing values for a client with userapp type
 		- owner: User object that owns the clients
 	"""
 	clients = {}
@@ -48,7 +47,8 @@ def generate_clients():
 		"owner_id": clients['owner']['id'],
 		"owner_account_id": clients['owner']['account_id']
 	}
-	clients['app'] = auth_oauth.create_client(app_dict)
+	app = auth_oauth.create_client(app_dict)
+	clients['app'] = app
 
 	# Create the bot
 	bot_dict = {
@@ -60,17 +60,55 @@ def generate_clients():
 		"owner_id": clients['owner']['id'],
 		"owner_account_id": clients['owner']['account_id']
 	}
-	clients['bot'] = auth_oauth.create_client(bot_dict)
+	bot = auth_oauth.create_client(bot_dict)
+	clients['bot'] = bot
 
 	return clients
 
-def test_auth_accounts():
+def test_auth_users():
 	"""
-	Test account functions: creating new accounts, editing account
-	information, etc.
+	Test user functions: creating new users, editing user information, etc.
 	"""
 	# Call the usual generate_user function
 	_user = generate_user()
+	_user_id = _user[0]
+	_user_dict = _user[2]
+	_user_account_id = _user_dict['account_id']
+
+	# Check if the generated user actually exists
+	assert auth.get_user_by_id(_user_id) is not None
+	assert db.get_object_as_dict_by_id(_user_account_id) is not None
+
+	# Check if the user can be found using builtin functions
+	assert auth.get_user_by_email(_user_dict['email']) == _user_dict
+	assert auth.get_user_by_account_id(_user_account_id) == _user_dict
+
+	# Make sure the newly-created user isn't an admin
+	assert auth.is_account_admin(_user_account_id) is False
+
+	# Try to edit user
+	new_user_dict = _user[2].copy()
+	new_user_dict['username'] = 'NewTestUsername'
+	new_user_dict['email'] = 'newtestemail@example.com'
+	edited_user_dict = auth.edit_user(_user_id, new_user_dict)
+
+	assert edited_user_dict is not None
+	assert edited_user_dict != _user_dict
+	assert auth.get_user_by_id(_user_id) is not None
+	assert auth.get_user_by_id(_user_id)['username'] == 'NewTestUsername'
+
+	# User editing failcases
+	new_user_dict['email'] = 'broken email'
+	try:
+		auth.edit_user(_user_id, new_user_dict)
+	except ValueError:
+		pass
+	else:
+		raise Exception("edit_user didn't raise an error with broken e-mail!")
+
+	# Try to delete user
+	# auth.remove_user(_user_id)
+	# assert auth.get_user_by_id(_user_id) is None
 
 def test_auth_accounts_web():
 	"""
@@ -83,3 +121,50 @@ def test_oauth_clients():
 	"""Test client creation, editing, deletion, etc."""
 	# Call the usual generate_clients function
 	_clients = generate_clients()
+
+	_app_dict = _clients["app"]
+	_app_id = _app_dict['client_id']
+
+	_bot_dict = _clients["bot"]
+	_bot_id = _bot_dict['client_id']
+	_bot_account_id = _bot_dict['bot_account_id']
+
+	_owner_user_id = _clients['owner']['id']
+
+	# Make sure the created clients are available in get_clients_owned_by_user
+	owned_clients = auth_oauth.get_clients_owned_by_user(_owner_user_id)
+	assert _app_dict in owned_clients
+	assert _bot_dict in owned_clients
+
+	# Try to update client
+	update_dict = {"name": "NewTestClient"}
+	edit_result = auth_oauth.edit_client(_bot_id, update_dict)
+	assert edit_result != _bot_dict
+	assert auth_oauth.get_client_by_id(_bot_id)['client_metadata']['client_name'] == 'NewTestClient'
+	assert db.get_object_as_dict_by_id(_bot_account_id)['username'] == 'NewTestClient'
+
+	# Test some fail cases
+	assert auth_oauth.get_client_by_id('fakeid') is None
+	assert auth_oauth.edit_client('fakeid', {"name": "FakeTestClient"}) is None
+	assert auth_oauth.remove_client('fakeid') is None
+
+	# Generate custom user for further tests
+	_new_user_id = generate_user()[0]
+
+	# Make sure user has no pre-owned clients or assigned tokens
+	assert not auth_oauth.get_clients_owned_by_user(_new_user_id)
+	assert not auth_oauth.get_auth_tokens_for_user(_new_user_id)
+
+	# Test access permissions
+	assert auth_oauth.get_client_if_owned_by_user(_new_user_id, 'fakeid') is None
+	assert auth_oauth.get_client_if_owned_by_user(_new_user_id, _bot_id) is False
+	assert auth_oauth.get_client_if_owned_by_user(_owner_user_id, _bot_id) is not False
+
+	# Clean up
+	# auth.remove_user(_new_user_id)
+
+	# Try to remove clients
+	auth_oauth.remove_client(_app_id)
+	assert auth_oauth.get_client_by_id(_app_id) is None
+	auth_oauth.remove_client(_bot_id)
+	assert auth_oauth.get_client_by_id(_bot_id) is None

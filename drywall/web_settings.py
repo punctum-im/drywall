@@ -9,6 +9,7 @@ For information pages (/about/*), see the web submodule.
 from drywall import app
 from drywall import auth
 from drywall import auth_oauth
+from drywall import auth_models
 from drywall import db
 from drywall import utils
 
@@ -159,21 +160,16 @@ def settings_clients_edit(client_id):
 	if not app_dict:
 		return render_template("settings/clients_404.html"), 404
 
-	app_scopes = app_dict.client_metadata["scope"].copy()
-	app_scopes = utils.replace_values_in_dict_by_value({"True": "checked"}, app_scopes)
-	app_scopes = utils.fill_dict_with_dummy_values(scopebox_scopes.values(), app_scopes, dummy="")
+	_app_scopes = auth_models.scope_to_list(app_dict['client_metadata']["scope"])
+	app_scopes = {}
+	for scope in _app_scopes:
+		app_scopes[scope] = "checked"
 
 	if request.method == "POST":
 		client_dict_info = web_scopebox_to_scopes(dict(request.form), cleanup_form_dict=True)
 		client_dict = client_dict_info[1]
-		client_dict["type"] = app_dict["type"]
 		client_dict["scopes"] = client_dict_info[0]
-		client_dict["owner"] = app_dict["owner"]
-		if client_dict["type"] == "bot":
-			client_dict["account_id"] = app_dict["account_id"]
-		client_dict["client_id"] = app_dict["client_id"]
-		client_dict["client_secret"] = app_dict["client_secret"]
-		auth.edit_client(app_dict["client_id"], client_dict)
+		auth_oauth.edit_client(app_dict["client_id"], client_dict)
 		return redirect('/settings/clients')
 
 	return _settings_render("settings/clients_edit.html", "clients", is_subpage=True,
@@ -191,8 +187,8 @@ def settings_clients_edit_remove(client_id):
 		return render_template("settings/clients_404.html"), 404
 
 	if request.method == "POST":
-		auth_oauth.remove_client(app_dict.client_id)
-		flash("Removed " + app_dict.client_metadata["client_name"] + ".")
+		auth_oauth.remove_client(app_dict['client_id'])
+		flash("Removed " + app_dict['client_metadata']["client_name"] + ".")
 		return redirect('/settings/clients')
 
-	return _settings_render("settings/clients_remove.html", "clients", is_subpage=True)
+	return _settings_render("settings/clients_remove.html", "clients", is_subpage=True, app_dict=app_dict)

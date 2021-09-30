@@ -15,6 +15,17 @@ from sqlalchemy import Column, ForeignKey, Integer, String, Text, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
 
+class ClientSerializerMixin(SerializerMixin):
+	"""
+	Special serializer mixin for Client objects, which handles
+	the client_metadata variable.
+	"""
+	def to_dict(self, **kwargs):
+		serialized_dict = super().to_dict(**kwargs)
+		serialized_dict['client_metadata'] = self.client_metadata
+		del serialized_dict['_client_metadata']
+		return serialized_dict
+
 class User(Base, SerializerMixin):
 	"""
 	Contains information about a registered user.
@@ -32,7 +43,7 @@ class User(Base, SerializerMixin):
 	def get_user_id(self):
 		return self.id
 
-class Client(Base, ClientMixin):
+class Client(Base, ClientMixin, ClientSerializerMixin):
 	"""Authlib-compatible Client model"""
 	__tablename__ = 'clients'
 	client_id = Column(String(48), index=True, primary_key=True) # in uuid4 format
