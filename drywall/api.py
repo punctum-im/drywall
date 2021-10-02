@@ -118,18 +118,27 @@ def api_post_conference_child(conference_id, object_type, object_data):
 	"""
 	if not object_data:
 		return pings.response_from_error(2)
+
+	# Check if the conference exists before doing anything else
+	if not db.get_object_as_dict_by_id(conference_id):
+		return pings.response_from_error(4)
+
 	data = object_data.copy()
 	if object_data['object_type'] == "invite":
 		data['conference_id'] = conference_id
 	else:
 		data['parent_conference'] = conference_id
-	return api_post(object_data, object_type=object_type)
+	return api_post(data, object_type=object_type)
 
 def api_get_patch_delete_conference_child(conference_id, object_type, object_id):
 	"""
 	Template for GET/PATCH/DELETE actions on conference members, invites, roles
 	etc.
 	"""
+	# Check if the conference exists before doing anything else
+	if not db.get_object_as_dict_by_id(conference_id):
+		return pings.response_from_error(4)
+
 	try:
 		object_get = api_get(object_id, object_type=object_type)
 		object_get_id = object_get['id']
@@ -163,6 +172,8 @@ def api_report_conference_child(conference_id, report_dict, object_id, object_ty
 	"""
 	Template for POST /api/v1/conference/<conference_id>/<object_type> APIs
 	"""
+	if not db.get_object_as_dict_by_id(conference_id):
+		return pings.response_from_error(4)
 	try:
 		object_get = api_get(object_id, object_type=object_type)
 		object_get['id']
