@@ -135,7 +135,7 @@ class Report(Base, CustomSerializerMixin):
 	__tablename__ = 'report'
 
 	id = Column('id', String(255), primary_key=True)
-	target = Column(String(255), ForeignKey('objects.id'), nullable=False)
+	target = Column(String(255), ForeignKey('objects.id', ondelete="CASCADE"), nullable=False)
 	note = Column(Text)
 	submission_date = Column(DateTime, nullable=False)
 

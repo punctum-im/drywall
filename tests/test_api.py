@@ -311,6 +311,44 @@ def endpoint_patch(flask_client, endpoint, object_type=None, data=None):
 	# Then, perform the usual checks, such as 404, wrong object type, etc.
 	_endpoint_sanity_checks(original_endpoint, 'PATCH', patch, object_type)
 
+def endpoint_report(flask_client, endpoint, object_type):
+	"""
+	Performs tests on a report endpoint.
+
+	Arguments:
+	  - flask_client (required) - provided by the client pytest fixture
+	  - endpoint (required) - the endpoint to test
+	  - object_type - dict containing one key and value: the key is the
+	                  placeholder string, the value is the object type.
+	                  If the endpoint accepts any object type, the object
+	                  type must be set to None.
+	"""
+	print("  * Testing: (REPORT) POST " + endpoint)
+
+	report = flask_client.post
+
+	# Fill in placeholder
+	original_endpoint = endpoint
+	endpoint = _fill_placeholder_in_endpoint(original_endpoint, object_type,
+											use_posted=True)
+
+	# Get report dict
+	data = _pregenerated_dict('report')
+
+	# Perform the action
+	result = report(endpoint, json=data)
+	try:
+		assert result.status == "201 CREATED"
+		assert result.json['id'] != data['id']
+		assert result.json['object_type'] == 'report'
+	except AssertionError as e:
+		print("Filled endpoint: " + endpoint)
+		print("Returned data:\n" + str(result.json))
+		raise e
+
+	# Then, perform the usual checks, such as 404, wrong object type, etc.
+	_endpoint_sanity_checks(original_endpoint, 'POST', report, object_type)
+
 def endpoint_delete(flask_client, endpoint, object_type=None):
 	"""
 	Performs tests on a DELETE endpoint.
@@ -378,7 +416,7 @@ def endpoint_conference_child(flask_client, method, endpoint, object_type, data=
 	"""
 	if method == 'GET':
 		action = flask_client.get
-	elif method == 'POST':
+	elif method == 'POST' or method == 'REPORT':
 		action = flask_client.post
 	elif method == 'PATCH':
 		action = flask_client.patch
@@ -421,6 +459,8 @@ def endpoint_conference_child(flask_client, method, endpoint, object_type, data=
 		endpoint_post(flask_client, final_endpoint, object_type)
 	elif method == 'PATCH':
 		endpoint_patch(flask_client, final_endpoint, object_type, data)
+	elif method == 'REPORT':
+		endpoint_report(flask_client, final_endpoint, object_type)
 	elif method == 'DELETE':
 		endpoint_delete(flask_client, final_endpoint, object_type)
 
@@ -453,6 +493,7 @@ def test_api_id(client):
 	endpoint_post(client, '/api/v1/id', None)
 	endpoint_get(client, '/api/v1/id/<id>', {'<id>': None})
 	endpoint_patch(client, '/api/v1/id/<id>', {'<id>': None}, {"content": "new_content"})
+	endpoint_report(client, '/api/v1/id/<id>/report', {'<id>': None})
 	endpoint_delete(client, '/api/v1/id/<id>', {'<id>': None})
 
 def test_api_accounts(client):
@@ -460,6 +501,7 @@ def test_api_accounts(client):
 	endpoint_post(client, '/api/v1/accounts', 'account')
 	endpoint_get(client, '/api/v1/accounts/<account_id>', {"<account_id>": "account"})
 	endpoint_patch(client, '/api/v1/accounts/<account_id>', {"<account_id>": "account"}, {"bio": "new_bio"})
+	endpoint_report(client, '/api/v1/accounts/<account_id>/report', {"<account_id>": "account"})
 	endpoint_delete(client, '/api/v1/accounts/<account_id>', {"<account_id>": "account"})
 
 def test_api_conferences(client):
@@ -467,6 +509,7 @@ def test_api_conferences(client):
 	endpoint_post(client, '/api/v1/conferences', 'conference')
 	endpoint_get(client, '/api/v1/conferences/<conference_id>', {"<conference_id>": "conference"})
 	endpoint_patch(client, '/api/v1/conferences/<conference_id>', {"<conference_id>": "conference"}, {"name": "new_name"})
+	endpoint_report(client, '/api/v1/conferences/<conference_id>/report', {"<conference_id>": "conference"})
 	endpoint_delete(client, '/api/v1/conferences/<conference_id>', {"<conference_id>": "conference"})
 
 def test_api_conferences_children(client):
@@ -482,6 +525,8 @@ def test_api_conferences_children(client):
 	endpoint_conference_child(client, 'PATCH', '/api/v1/conferences/<conference_id>/members/<member_id>',
 							object_type={"<member_id>": "conference_member"},
 							data={"nickname": "new_nickname"})
+	endpoint_conference_child(client, 'REPORT', '/api/v1/conferences/<conference_id>/members/<member_id>/report',
+							object_type={"<member_id>": "conference_member"})
 	endpoint_conference_child(client, 'DELETE', '/api/v1/conferences/<conference_id>/members/<member_id>',
 							object_type={"<member_id>": "conference_member"})
 
@@ -493,6 +538,8 @@ def test_api_conferences_children(client):
 	endpoint_conference_child(client, 'PATCH', '/api/v1/conferences/<conference_id>/channels/<channel_id>',
 							object_type={"<channel_id>": "channel"},
 							data={"name": "new_name"})
+	endpoint_conference_child(client, 'REPORT', '/api/v1/conferences/<conference_id>/channels/<channel_id>/report',
+							object_type={"<channel_id>": "channel"})
 	endpoint_conference_child(client, 'DELETE', '/api/v1/conferences/<conference_id>/channels/<channel_id>',
 							object_type={"<channel_id>": "channel"})
 
@@ -504,6 +551,8 @@ def test_api_conferences_children(client):
 	endpoint_conference_child(client, 'PATCH', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
 							object_type={"<invite_id>": "invite"},
 							data={"code": "new_code"})
+	endpoint_conference_child(client, 'REPORT', '/api/v1/conferences/<conference_id>/invites/<invite_id>/report',
+							object_type={"<invite_id>": "invite"})
 	endpoint_conference_child(client, 'DELETE', '/api/v1/conferences/<conference_id>/invites/<invite_id>',
 							object_type={"<invite_id>": "invite"})
 
@@ -515,6 +564,8 @@ def test_api_conferences_children(client):
 	endpoint_conference_child(client, 'PATCH', '/api/v1/conferences/<conference_id>/roles/<role_id>',
 							object_type={"<role_id>": "role"},
 							data={"name": "new_name"})
+	endpoint_conference_child(client, 'REPORT', '/api/v1/conferences/<conference_id>/roles/<role_id>/report',
+							object_type={"<role_id>": "role"})
 	endpoint_conference_child(client, 'DELETE', '/api/v1/conferences/<conference_id>/roles/<role_id>',
 							object_type={"<role_id>": "role"})
 
@@ -526,6 +577,7 @@ def test_api_channels(client):
 	endpoint_post(client, '/api/v1/channels', 'channel')
 	endpoint_get(client, '/api/v1/channels/<channel_id>', {"<channel_id>": "channel"})
 	endpoint_patch(client, '/api/v1/channels/<channel_id>', {"<channel_id>": "channel"}, {"name": "new_name"})
+	endpoint_report(client, '/api/v1/channels/<channel_id>/report', {"<channel_id>": "channel"})
 	endpoint_delete(client, '/api/v1/channels/<channel_id>', {"<channel_id>": "channel"})
 
 def test_api_messages(client):
@@ -533,6 +585,7 @@ def test_api_messages(client):
 	endpoint_post(client, '/api/v1/messages', 'message')
 	endpoint_get(client, '/api/v1/messages/<message_id>', {"<message_id>": "message"})
 	endpoint_patch(client, '/api/v1/messages/<message_id>', {"<message_id>": "message"}, {"content": "new_content"})
+	endpoint_report(client, '/api/v1/messages/<message_id>/report', {"<message_id>": "message"})
 	endpoint_delete(client, '/api/v1/messages/<message_id>', {"<message_id>": "message"})
 
 def test_api_invites(client):
@@ -540,6 +593,7 @@ def test_api_invites(client):
 	endpoint_post(client, '/api/v1/invites', 'invite')
 	endpoint_get(client, '/api/v1/invites/<invite_id>', {"<invite_id>": "invite"})
 	endpoint_patch(client, '/api/v1/invites/<invite_id>', {"<invite_id>": "invite"}, {"code": "new_code"})
+	endpoint_report(client, '/api/v1/invites/<invite_id>/report', {"<invite_id>": "invite"})
 	endpoint_delete(client, '/api/v1/invites/<invite_id>', {"<invite_id>": "invite"})
 
 def test_api_roles(client):
@@ -547,6 +601,7 @@ def test_api_roles(client):
 	endpoint_post(client, '/api/v1/roles', 'role')
 	endpoint_get(client, '/api/v1/roles/<role_id>', {"<role_id>": "role"})
 	endpoint_patch(client, '/api/v1/roles/<role_id>', {"<role_id>": "role"}, {"name": "new_name"})
+	endpoint_report(client, '/api/v1/roles/<role_id>/report', {"<role_id>": "role"})
 	endpoint_delete(client, '/api/v1/roles/<role_id>', {"<role_id>": "role"})
 
 def test_api_reports(client):

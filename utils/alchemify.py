@@ -67,7 +67,10 @@ def is_id(object_properties, key):
 	if object_properties['key_types'][key] == "id":
 		id_key_type = object_properties['id_key_types'][key]
 		if id_key_type == 'any':
-			return "ForeignKey('objects.id')"
+			if object_properties['object_type'] == 'report' and key == 'target':
+				return "ForeignKey('objects.id', ondelete='CASCADE')"
+			else:
+				return "ForeignKey('objects.id')"
 		else:
 			return "ForeignKey('" + id_key_type + ".id')"
 	return ""
