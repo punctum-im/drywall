@@ -136,7 +136,7 @@ def api_get_patch_delete_conference_child(conference_id, object_type, object_id)
 	etc.
 	"""
 	# Check if the conference exists before doing anything else
-	if not db.get_object_as_dict_by_id(conference_id):
+	if not db.id_taken(conference_id):
 		return pings.response_from_error(4)
 
 	try:
@@ -158,12 +158,27 @@ def api_get_patch_delete_conference_child(conference_id, object_type, object_id)
 
 def api_report(report_dict, object_id, object_type=None):
 	"""Template for /api/v1/<type>/<id>/report endpoints."""
-	api_get(object_id, object_type=object_type)
+	try:
+		object_get = api_get(object_id, object_type=object_type)
+		object_get_id = object_get['id']
+	except:
+		return object_get
 
-	new_report_dict = {"target": object_id}
-	if 'note' in report_dict:
+	new_report_dict = {
+		"object_type": "report", "target": object_get_id,
+		"submission_date": 'dummy' # this gets replaced when the object is created
+	}
+
+	if report_dict and 'note' in report_dict:
 		new_report_dict['note'] = report_dict['note']
-	report = objects.make_object_from_dict(new_report_dict)
+
+	try:
+		report = objects.make_object_from_dict(new_report_dict)
+	except TypeError as e:
+		return pings.response_from_error(10, error_message=e)
+		# TODO: differentiate between the possible typeerrors
+	except KeyError as e:
+		return pings.response_from_error(7, error_message=e)
 
 	db.add_object(report)
 	return Response(json.dumps(report.__dict__), status=201, mimetype='application/json')
@@ -241,9 +256,6 @@ def api_stash_request():
 		return pings.response_from_error(9, error_message=str(e))
 
 	return stash
-
-# TODO: Federation, authentication, clients
-# Probably will be in separate files, but I'll note it down here for now
 
 # Accounts
 
