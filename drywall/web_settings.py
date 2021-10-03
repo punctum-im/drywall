@@ -113,7 +113,6 @@ def settings_clients():
 	_sanity_check = _settings_sanity_checks()
 	if _sanity_check:
 		return _sanity_check
-	print(auth_oauth.get_clients_owned_by_user(session["user_id"]))
 	return _settings_render("settings/clients.html", "clients",
 							apps_owned=auth_oauth.get_clients_owned_by_user(session["user_id"]))
 
@@ -132,7 +131,7 @@ def settings_clients_new():
 		# Prepare a client dict with all the information from the provided form
 		client_dict_info = web_scopebox_to_scopes(dict(request.form), cleanup_form_dict=True)
 		client_dict = client_dict_info[1]
-		client_dict["scopes"] = client_dict_info[0]
+		client_dict["scopes"] = list(client_dict_info[0].keys())
 		client_dict["owner_id"] = session["user_id"]
 		client_dict["owner_account_id"] = session["account_id"]
 		client_dict["uri"] = 'FIXME'
@@ -168,7 +167,7 @@ def settings_clients_edit(client_id):
 	if request.method == "POST":
 		client_dict_info = web_scopebox_to_scopes(dict(request.form), cleanup_form_dict=True)
 		client_dict = client_dict_info[1]
-		client_dict["scopes"] = client_dict_info[0]
+		client_dict["scopes"] = list(client_dict_info[0].keys())
 		auth_oauth.edit_client(app_dict["client_id"], client_dict)
 		return redirect('/settings/clients')
 

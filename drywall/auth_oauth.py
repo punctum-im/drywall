@@ -121,7 +121,7 @@ def create_client(client_dict):
 			"client_name": client_dict['name'],
 			"client_description": client_dict['description'],
 			"client_uri": client_dict['uri'],
-			"scope": list_to_scope('scopes')
+			"scope": list_to_scope(client_dict['scopes'])
 		}
 		client.set_client_metadata(client_metadata)
 
