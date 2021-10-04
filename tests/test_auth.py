@@ -15,7 +15,7 @@ def generate_user():
 	a dict containing the values of the resulting User object.
 	"""
 	# Generate a random username, e-mail, password
-	username = str(time.time())
+	username = str(time.time()).replace('.', '')
 	email = str(time.time()) + "@example.com"
 	password = "testUser"
 
@@ -94,8 +94,10 @@ def test_auth_users():
 
 	assert edited_user_dict is not None
 	assert edited_user_dict != _user_dict
-	assert auth.get_user_by_id(_user_id) is not None
-	assert auth.get_user_by_id(_user_id)['username'] == 'NewTestUsername'
+	edited_user = auth.get_user_by_id(_user_id)
+	assert edited_user is not None
+	assert edited_user['username'] == 'NewTestUsername'
+	assert edited_user['email'] == 'newtestemail@example.com'
 
 	# User editing failcases
 	new_user_dict['email'] = 'broken email'
@@ -137,11 +139,29 @@ def test_oauth_clients():
 	assert _bot_dict in owned_clients
 
 	# Try to update client
-	update_dict = {"name": "NewTestClient"}
+	update_dict = {"name": "NewTestClient", "scopes": ["account:read", "channel:write"]}
 	edit_result = auth_oauth.edit_client(_bot_id, update_dict)
 	assert edit_result != _bot_dict
 	assert auth_oauth.get_client_by_id(_bot_id)['client_metadata']['client_name'] == 'NewTestClient'
+	assert auth_oauth.get_client_by_id(_bot_id)['client_metadata']['scope'] == "account:read channel:write"
 	assert db.get_object_as_dict_by_id(_bot_account_id)['username'] == 'NewTestClient'
+
+	# Try to create/edit bot with invalid name
+	try:
+		bot_dict = {
+			"name": "$.invalid.bot.name$",
+			"type": "bot",
+			"uri": "https://punctum.im/callback",
+			"scopes": ["channel:read", "channel:write"],
+			"owner_id": _clients['owner']['id'],
+			"owner_account_id": _clients['owner']['account_id']
+		}
+		auth_oauth.create_client(bot_dict)
+		auth_oauth.edit_client(_bot_id, {"name": "$.invalid.bot.name$"})
+	except ValueError:
+		pass
+	else:
+		raise Exception("Invalid bot name test failed!")
 
 	# Test some fail cases
 	assert auth_oauth.get_client_by_id('fakeid') is None

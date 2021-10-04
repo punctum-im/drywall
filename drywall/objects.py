@@ -4,6 +4,7 @@ Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
+from drywall.auth import username_valid
 from drywall import db
 from drywall import utils
 
@@ -317,6 +318,12 @@ class Account(Object):
 	id_key_types = {"friends": "account", "blocklist": "account"}
 	nonrewritable_keys = ["username"]
 	unique_keys = ["username"]
+
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__ # noqa: F841
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
+		if not username_valid(object_dict['username']):
+			raise KeyError("invalid username")
 
 class Channel(Object):
 	"""

@@ -6,7 +6,7 @@ This code is, admittedly, a huge mess. If you're familiar with Authlib,
 feel free to send a MR with cleanups where you deem necessary.
 """
 from drywall.auth_models import User, Client, Token, AuthorizationCode
-from drywall.auth import current_user
+from drywall.auth import current_user, username_valid
 from drywall import app
 from drywall import db
 from drywall import objects
@@ -128,6 +128,8 @@ def create_client(client_dict):
 		client.client_secret = token_urlsafe(32)
 
 		if client_dict['type'] == 'bot':
+			if not username_valid(client_dict['name']):
+				raise ValueError('Invalid username for bot account!')
 			account_dict = {
 				"object_type": "account",
 				"username": client_dict['name'],
@@ -166,6 +168,8 @@ def edit_client(client_id, client_dict):
 			account_id = client.bot_account_id
 			account = db.get_object_as_dict_by_id(account_id)
 			if account['username'] != client_dict['name']:
+				if not username_valid(client_dict['name']):
+					raise ValueError('Invalid username for bot account!')
 				account['username'] = client_dict['name']
 				account_object = objects.make_object_from_dict(account, extend=account_id)
 				db.push_object(account_id, account_object)

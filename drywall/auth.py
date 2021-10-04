@@ -11,6 +11,7 @@ from drywall import objects
 
 from flask import render_template, flash, request, redirect, session, url_for
 from email_validator import validate_email, EmailNotValidError
+import re
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 from werkzeug.security import check_password_hash
@@ -96,6 +97,17 @@ def current_user():
 			return db_session.query(User).get(uid)
 		return None
 
+def username_valid(username):
+	"""
+	Validates an username. Returns True if the provided username is valid,
+	False otherwise.
+	"""
+	if not username:
+		return False
+	if re.match(r'^[A-Za-z0-9_-]+$', username) and username.isascii():
+		return True
+	return False
+
 def get_user_by_id(user_id):
 	"""
 	Gets a user by the provided user ID. Returns a dict with the user's
@@ -142,6 +154,8 @@ def user_value_validation(username, email):
 	if username:
 		if db.get_object_by_key_value_pair("account", {"username": username}):
 			raise ValueError("Username taken.")
+		if not username_valid(username):
+			raise ValueError("Invalid username. Your username can only contain alphanumeric characters, and the special characters '-' and '_'.")
 	if email:
 		if get_user_by_email(email):
 			raise ValueError("E-mail already in use.")
