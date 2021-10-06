@@ -120,8 +120,12 @@ def create_client(client_dict):
 		client_metadata = {
 			"client_name": client_dict['name'],
 			"client_description": client_dict['description'],
+			"grant_types": ['authorization_code', 'implicit', 'refreshtoken'],
 			"client_uri": client_dict['uri'],
-			"scope": list_to_scope(client_dict['scopes'])
+			"redirect_uris": client_dict['uri'],
+			"response_types": ['code'],
+			"scope": list_to_scope(client_dict['scopes']),
+			"token_endpoint_auth_method": 'client_secret_password'
 		}
 		client.set_client_metadata(client_metadata)
 
@@ -340,7 +344,7 @@ def authorize():
 		try:
 			grant = authorization_server.validate_consent_request(end_user=user)
 		except OAuth2Error as error:
-			return error.error
+			return str(error), 400
 		return render_template('auth/oauth_authorize.html', user=user, grant=grant)
 	grant_user = user
 	return authorization_server.create_authorization_response(grant_user=grant_user)
@@ -354,3 +358,11 @@ def revoke_token():
 def issue_token():
 	"""OAuth2 token issuing endpoint."""
 	return authorization_server.create_token_response()
+
+@app.route('/oauth/authorize/success', methods=['GET'])
+def authorize_success():
+	"""
+	Default redirect URI.
+	"""
+	return flask.render_template('auth/oauth_code_uri.html',
+		code=flask.request.args.get('code'))

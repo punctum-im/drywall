@@ -10,7 +10,7 @@ from authlib.oauth2.rfc6749 import ClientMixin, TokenMixin, AuthorizationCodeMix
 # FIXME: these functions appear to be missing, fix this once AuthLib 1.0 is out
 # from authlib.oauth2.rfc6749 import scope_to_list, list_to_scope
 from authlib.common.encoding import to_unicode
-from datetime import time
+import time
 from sqlalchemy import Column, ForeignKey, Integer, String, Text, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy_serializer import SerializerMixin
@@ -65,8 +65,7 @@ class Client(Base, ClientMixin, ClientSerializerMixin):
 		return self.client_id
 
 	def get_default_redirect_uri(self):
-		if self.redirect_uris:
-			return self.redirect_uris[0]
+		return self.client_metadata['client_uri']
 
 	def get_allowed_scope(self, scope):
 		if not scope:

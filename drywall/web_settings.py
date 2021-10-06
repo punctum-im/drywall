@@ -10,6 +10,7 @@ from drywall import app
 from drywall import auth
 from drywall import auth_oauth
 from drywall import auth_models
+from drywall import config
 from drywall import db
 from drywall import utils
 
@@ -134,7 +135,7 @@ def settings_clients_new():
 		client_dict["scopes"] = list(client_dict_info[0].keys())
 		client_dict["owner_id"] = session["user_id"]
 		client_dict["owner_account_id"] = session["account_id"]
-		client_dict["uri"] = 'FIXME'
+		client_dict["uri"] = 'https://' + config.get('instance_domain') + '/oauth/authorize/success'
 
 		# Attempt to create a client
 		try:

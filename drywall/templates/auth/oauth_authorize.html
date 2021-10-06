@@ -10,6 +10,20 @@
 <p>The application <strong>{{grant.client.client_name}}</strong> is requesting:
 <strong>{{ grant.request.scope }}</strong>
 </p>
-	<p>(you are currently logged in as {{{user.username}}}</p>
-  <span class="small">don't have an account? <a href="/auth/sign_up">sign up</a></span>
+
+	<p>(you are currently logged in as {{user.username}})</p>
+<form action="" method="post">
+  <label>
+    <input type="checkbox" name="confirm">
+    <span>Consent?</span>
+  </label>
+  {% if not user %}
+  <p>You haven't logged in. Log in with:</p>
+  <div>
+    <input type="text" name="username">
+  </div>
+  {% endif %}
+  <br>
+  <button>Submit</button>
+</form>
 {% endblock %}

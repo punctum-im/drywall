@@ -36,8 +36,10 @@ def can_account_access(account_id, object):
 
 	elif object_type == 'channel':
 		channel_type = object['channel_type']
-		if channel_type == 'text':
-			return can_account_access(account_id, db.get_object_dict_by_id(object['parent_conference']))
+		if channel_type == 'text' or channel_type == 'media':
+			if can_account_access(account_id, db.get_object_dict_by_id(object['parent_conference'])):
+				return True
+			return False
 		elif channel_type == 'direct_message':
 			if account_id in object['members']:
 				return True

@@ -1,0 +1,12 @@
+{% extends 'base-auth.html' %}
+
+{% block header %}
+  <h1>{% block title %}success!{% endblock %}</h1>
+{% endblock %}
+
+{% block icon %}robot{% endblock %}
+
+{% block content %}
+<p>Log into your application using the following code:
+<Br><pre><code>{{code}}</code></pre></p>
+{% endblock %}
