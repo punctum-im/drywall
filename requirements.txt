@@ -1,6 +1,7 @@
-flask
+authlib
 email-validator
-simplejson
-SQLAlchemy
-SQLAlchemy-serializer
+flask
 psycopg2-binary
+simplejson
+SQLAlchemy>=1.4.0
+SQLAlchemy-serializer

@@ -4,6 +4,7 @@ Defines classes for all objects in the protocol for easier
 object creation.
 Usage: import the file and define an object using one of the classes
 """
+from drywall.auth import username_valid
 from drywall import db
 from drywall import utils
 
@@ -28,7 +29,7 @@ def assign_id():
 	id = uuid.uuid4()
 	return str(id)
 
-def __validate_id_key(self, key, value):
+def _validate_id_key(self, key, value):
 	"""Shorthand function to validate ID keys."""
 	test_object = db.get_object_as_dict_by_id(value)
 	if not test_object:
@@ -36,7 +37,7 @@ def __validate_id_key(self, key, value):
 	elif self.id_key_types[key] != "any" and not test_object['object_type'] == self.id_key_types[key]:
 		raise TypeError("The object given in the key '" + key + "' does not have the correct object type. (is " + test_object['object_type'] + ", should be " + self.id_key_types[key] + ")")
 
-def __strip_invalid_keys(self, object_dict):
+def _strip_invalid_keys(self, object_dict):
 	"""
 	Takes an object dict, removes all invalid values and performs a few
 	checks.
@@ -52,10 +53,10 @@ def __strip_invalid_keys(self, object_dict):
 		if key in self.valid_keys:
 			# Validate ID keys
 			if self.key_types[key] == 'id':
-				__validate_id_key(self, key, value)
+				_validate_id_key(self, key, value)
 			elif self.key_types[key] == 'id_list':
 				for id_value in value:
-					__validate_id_key(self, key, id_value)
+					_validate_id_key(self, key, id_value)
 
 			# Validate unique keys
 			if self.unique_keys:
@@ -113,10 +114,10 @@ def init_object(self, object_dict, force_id=False, patch_dict=False, federated=F
 				found_key = e.args[0]
 				if found_key in current_object and patch_dict[found_key] != current_object[found_key]:
 					raise ValueError(e)
-		final_patch_dict = __strip_invalid_keys(self, patch_dict)
+		final_patch_dict = _strip_invalid_keys(self, patch_dict)
 
 	# Add all valid keys
-	clean_object_dict = __strip_invalid_keys(self, object_dict)
+	clean_object_dict = _strip_invalid_keys(self, object_dict)
 	final_dict = {**clean_object_dict, **init_dict}
 
 	# Add default keys if needed
@@ -318,6 +319,12 @@ class Account(Object):
 	nonrewritable_keys = ["username"]
 	unique_keys = ["username"]
 
+	def __init__(self, object_dict, force_id=False, patch_dict=False, federated=False):
+		__doc__ = Object.__doc__ # noqa: F841
+		super().__init__(object_dict, force_id=force_id, patch_dict=patch_dict, federated=federated)
+		if not username_valid(object_dict['username']):
+			raise KeyError("invalid username")
+
 class Channel(Object):
 	"""
 	Contains information about a channel.
@@ -394,11 +401,11 @@ class ConferenceMember(Object):
 	"""
 	type = 'object'
 	object_type = 'conference_member'
-	valid_keys = ["user_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
-	required_keys = ["user_id", "permissions", "parent_conference"]
+	valid_keys = ["account_id", "nickname", "parent_conference", "roles", "permissions", "banned"]
+	required_keys = ["account_id", "permissions", "parent_conference"]
 	default_keys = {"banned": False, "roles": [], "permissions": "21101"}
-	key_types = {"user_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
-	id_key_types = {"user_id": "account", "roles": "role", "parent_conference": "conference"}
+	key_types = {"account_id": "id", "nickname": "string", "parent_conference": "id", "roles": "id_list", "permissions": "permission_map", "banned": "boolean"}
+	id_key_types = {"account_id": "account", "roles": "role", "parent_conference": "conference"}
 	nonrewritable_keys = []
 
 class Invite(Object):

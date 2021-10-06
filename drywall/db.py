@@ -6,6 +6,7 @@ database backends.
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from drywall import db_models as models
+from drywall import auth_models # noqa: F401
 from drywall import config
 
 # !!! IMPORTANT !!! --- !!! IMPORTANT !!! --- !!! IMPORTANT !!!
@@ -28,10 +29,6 @@ from drywall import config
 engine = create_engine("postgresql://%s:%s@localhost/%s" % (config.get('db_user'), config.get('db_password'), config.get('db_name')), future=True)
 
 models.Base.metadata.create_all(engine)
-
-# The current client DB functions are due to be deprecated once we add authlib
-# support. Thus, we'll re-use the old dummy DB backend functions for it.
-client_db = {}
 
 # Helper functions
 
@@ -159,93 +156,3 @@ def get_object_by_key_value_pair(object_type, key_value_dict, limit_objects=Fals
 		return matches
 	else:
 		return None
-
-# Users
-
-def get_user_by_email(email):
-	"""
-	Returns an user's username on the server by email. If not found, returns
-	None.
-	"""
-	user_dict = None
-	with Session(engine) as session:
-		query = session.query(models.User).get(email)
-		if query:
-			user_dict = query.to_dict()
-	return user_dict
-
-def add_user(user_dict):
-	"""Adds a new user to the database."""
-	with Session(engine) as session:
-		new_user = models.User()
-		for key in ['account_id', 'username', 'email', 'password']:
-			setattr(new_user, key, user_dict[key])
-		session.add(new_user)
-		session.commit()
-		new_user_dict = new_user.to_dict()
-	return new_user_dict
-
-def update_user(user_email, user_dict):
-	"""Edits a user in the database."""
-	with Session(engine) as session:
-		object = session.query(models.User).get(user_email)
-		if user_email != user_dict['email']:
-			if get_user_by_email(user_email):
-				raise ValueError("E-mail is taken")
-		for key in ['account_id', 'username', 'email', 'password']:
-			setattr(object, key, user_dict[key])
-		session.commit()
-		new_user_dict = object.to_dict()
-	return new_user_dict
-
-def remove_user(email):
-	"""Removes a user from the database."""
-	# This will be implemented once we can figure out all the related
-	# side-effects, like removing/adding stubs to orphaned objects or
-	# removing the user's Account object.
-	raise Exception('stub')
-
-# Clients
-
-def get_client_by_id(client_id):
-	"""Returns a client dict by client ID. Returns None if not found."""
-	if id in client_db:
-		return client_db['id']
-	return None
-
-def get_clients_for_user(user_id, access_type):
-	"""Returns a dict containing all clients owned/given access to by an user."""
-	return_dict = {}
-	if access_type == "owner":
-		for client_dict in client_db.values():
-			if client_dict['owner'] == user_id:
-				return_dict[client_dict['client_id']] == client_dict
-	elif access_type == "user":
-		# TODO: We should let people view the apps they're using and
-		# revoke access if needed. This will most likely require adding
-		# an extra variable to the user dict for used applications, which
-		# we could then iterate using simmilar code as above.
-		# For now, we'll stub this.
-		raise Exception('stub')
-	else:
-		raise ValueError
-	if return_dict:
-		return return_dict
-	return None
-
-def add_client(client_dict):
-	"""Adds a new client to the database."""
-	client_db[client_dict['id']] = client_dict
-	return client_dict
-
-def update_client(client_id, client_dict):
-	"""Updates an existing client"""
-	client_db[client_id] = client_dict
-	return client_dict
-
-def remove_client(client_id):
-	"""Removes a client from the database."""
-	del client_db[client_id]
-	# TODO: Handle removing removed clients from "used applications" variables
-	# in user info; since we don't implement this yet, there's no code for it
-	return client_id

@@ -74,7 +74,7 @@ class ConferenceMember(Base, CustomSerializerMixin):
 	__tablename__ = 'conference_member'
 
 	id = Column('id', String(255), primary_key=True)
-	user_id = Column(String(255), ForeignKey('account.id'), nullable=False)
+	account_id = Column(String(255), ForeignKey('account.id'), nullable=False)
 	nickname = Column(Text)
 	parent_conference = Column(String(255), ForeignKey('conference.id'), nullable=False)
 	roles = Column(postgresql.ARRAY(String(255)))
@@ -138,15 +138,6 @@ class Report(Base, CustomSerializerMixin):
 	target = Column(String(255), ForeignKey('objects.id', ondelete="CASCADE"), nullable=False)
 	note = Column(Text)
 	submission_date = Column(DateTime, nullable=False)
-
-# User
-class User(Base, SerializerMixin):
-	__tablename__ = "users"
-
-	account_id = Column(String(255), nullable=False, unique=True)
-	email = Column(String(255), primary_key=True)
-	username = Column(String(255), nullable=False, unique=True)
-	password = Column(Text, nullable=False)
 
 # Helper functions
 

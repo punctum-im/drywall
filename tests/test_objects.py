@@ -208,6 +208,23 @@ def test_object_init_failcases():
 
 def test_object_specific_failcases():
 	"""Test some object-specific constraints"""
+	# Account: try to create account with invalid username
+	valid_account_dict = GeneratedObjects.objects['account'].copy()
+	valid_account_dict['username'] = '_Valid-Username_'
+	try:
+		objects.Account(valid_account_dict)
+	except KeyError:
+		raise Exception("Failed to create account with valid username!")
+
+	invalid_account_dict = GeneratedObjects.objects['account'].copy()
+	invalid_account_dict['username'] = '$.invalid.username.$'
+	try:
+		objects.Account(invalid_account_dict)
+	except KeyError:
+		pass
+	else:
+		raise Exception("Account with invalid username test failed!")
+
 	# Channel: try to create a channel without a parent conference
 	channel_dict = GeneratedObjects.objects['channel'].copy()
 	channel_dict.pop('parent_conference')

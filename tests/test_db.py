@@ -43,25 +43,3 @@ def test_db():
 
 	db.delete_object(test_object_id)
 	assert not db.id_taken(test_object_id)
-
-	test_user = {"username": "test", "email": "mail@example.com", "password": "password", "account_id": PregeneratedObjects.dicts['account']['id']}
-	db.add_user(test_user)
-	assert db.get_user_by_email("mail@example.com")
-
-	"""
-	try:
-		db.add_user(test_user)
-		raise Exception
-	except ValueError:
-		pass
-
-	test_user["username"] = "test2"
-	try:
-		db.add_user(test_user)
-		raise Exception
-	except ValueError:
-		pass
-	"""
-
-	# db.remove_user("mail@example.com")
-	# assert db.get_user_by_email("mail@example.com") == None
